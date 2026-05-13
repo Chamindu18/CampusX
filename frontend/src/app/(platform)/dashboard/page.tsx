@@ -29,6 +29,25 @@ export default function DashboardPage() {
           <p className="mt-4 leading-7 text-slate-600">
             Browse and manage student listings.
           </p>
+
+          <a
+            href="/marketplace"
+            className="
+              mt-8
+              inline-flex
+              rounded-xl
+              bg-blue-600
+              px-5
+              py-3
+              text-sm
+              font-medium
+              text-white
+              transition
+              hover:bg-blue-700
+            "
+          >
+            Open Marketplace
+          </a>
         </Card>
 
         {/* Card 2 */}
