@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { HeroSection } from "@/components/sections/home/HeroSection";
 import { CategoriesSection } from "@/components/sections/home/CategoriesSection";
 import { FeaturesSection } from "@/components/sections/home/FeaturesSection";
+import { SafetySection } from "@/components/sections/home/SafetySection";
 
 export default function HomePage() {
   return (
@@ -22,6 +23,9 @@ export default function HomePage() {
 
       {/* Features */}
       <FeaturesSection />
+
+      {/* Safety */}
+      <SafetySection />
     </main>
   );
 }
