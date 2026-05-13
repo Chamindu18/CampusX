@@ -2,6 +2,8 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
+import { Toaster } from "react-hot-toast";
+
 /**
  * Global metadata.
  */
@@ -23,7 +25,21 @@ export default function RootLayout({
 }: Readonly<RootLayoutProps>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Application Content */}
+        {children}
+
+        {/* Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              borderRadius: "16px",
+              padding: "14px",
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }
