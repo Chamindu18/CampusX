@@ -100,6 +100,7 @@ export default function MarketplacePage() {
             price={listing.price}
             condition={listing.condition}
             location={listing.location}
+            id={listing.id}
           />
         ))}
       </div>
