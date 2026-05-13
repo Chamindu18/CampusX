@@ -55,16 +55,22 @@ export function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-            >
-              Login
-            </Button>
+            {/* Login */}
+            <Link href="/login">
+              <Button
+                variant="outline"
+                size="sm"
+              >
+                Login
+              </Button>
+            </Link>
 
-            <Button size="sm">
-              Get Started
-            </Button>
+            {/* Signup */}
+            <Link href="/signup">
+              <Button size="sm">
+                Get Started
+              </Button>
+            </Link>
           </div>
         </div>
       </Container>

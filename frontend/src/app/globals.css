@@ -37,3 +37,19 @@ body {
     system-ui,
     sans-serif;
 }
+
+/**
+ * Hero search text animation.
+ */
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

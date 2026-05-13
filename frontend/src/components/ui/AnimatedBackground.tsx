@@ -1,71 +1,127 @@
 "use client";
 
 /**
- * Cinematic animated background.
+ * Global cinematic atmospheric background.
  *
  * Features:
- * - ambient moving gradients
+ * - scroll-reactive atmosphere
+ * - animated gradient mesh
  * - floating particles
- * - layered motion
- * - subtle premium atmosphere
+ * - layered lighting system
  */
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 export function AnimatedBackground() {
+  /**
+   * Scroll progress.
+   */
+  const { scrollYProgress } = useScroll();
+
+  /**
+   * Dynamic atmosphere transforms.
+   */
+  const backgroundY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [0, -250]
+  );
+
+  const opacity = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [1, 0.65]
+  );
+
   /**
    * Floating particles.
    */
   const particles = Array.from(
-    { length: 18 },
+    { length: 30 },
     (_, i) => i
   );
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* MAIN GRADIENT ORB */}
+    <motion.div
+      style={{
+        y: backgroundY,
+        opacity,
+      }}
+      className="absolute inset-0 overflow-hidden"
+    >
+      {/* Base Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50" />
+
+      {/* ORB 1 */}
       <motion.div
         animate={{
-          x: [0, 80, 0],
-          y: [0, -60, 0],
-          scale: [1, 1.1, 1],
+          x: [0, 120, 0],
+          y: [0, -80, 0],
+          scale: [1, 1.15, 1],
+        }}
+        transition={{
+          duration: 14,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="
+          absolute
+          left-[-220px]
+          top-[-220px]
+          h-[700px]
+          w-[700px]
+          rounded-full
+          bg-blue-400/40
+          blur-3xl
+        "
+      />
+
+      {/* ORB 2 */}
+      <motion.div
+        animate={{
+          x: [0, -120, 0],
+          y: [0, 90, 0],
+          scale: [1, 1.12, 1],
         }}
         transition={{
           duration: 18,
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute left-[-180px] top-[-180px] h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl"
+        className="
+          absolute
+          right-[-180px]
+          top-[200px]
+          h-[650px]
+          w-[650px]
+          rounded-full
+          bg-indigo-400/30
+          blur-3xl
+        "
       />
 
-      {/* SECOND ORB */}
+      {/* ORB 3 */}
       <motion.div
         animate={{
-          x: [0, -60, 0],
-          y: [0, 40, 0],
+          x: [0, 80, 0],
+          y: [0, -70, 0],
           scale: [1, 1.08, 1],
         }}
         transition={{
-          duration: 22,
+          duration: 16,
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute right-[-120px] top-[220px] h-[420px] w-[420px] rounded-full bg-indigo-300/20 blur-3xl"
-      />
-
-      {/* THIRD ORB */}
-      <motion.div
-        animate={{
-          x: [0, 40, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.06, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute bottom-[-200px] left-[35%] h-[400px] w-[400px] rounded-full bg-sky-200/30 blur-3xl"
+        className="
+          absolute
+          bottom-[-250px]
+          left-[25%]
+          h-[600px]
+          w-[600px]
+          rounded-full
+          bg-cyan-300/30
+          blur-3xl
+        "
       />
 
       {/* FLOATING PARTICLES */}
@@ -73,35 +129,36 @@ export function AnimatedBackground() {
         <motion.div
           key={particle}
           animate={{
-            y: [0, -30, 0],
-            opacity: [0.2, 0.6, 0.2],
+            y: [0, -40, 0],
+            x: [0, 10, 0],
+            opacity: [0.2, 0.8, 0.2],
           }}
           transition={{
-            duration: 4 + particle % 5,
+            duration: 3 + (particle % 5),
             repeat: Infinity,
-            delay: particle * 0.3,
+            delay: particle * 0.25,
           }}
-          className="absolute rounded-full bg-blue-400/30"
+          className="absolute rounded-full bg-blue-500/40"
           style={{
-            width: `${6 + (particle % 4) * 4}px`,
-            height: `${6 + (particle % 4) * 4}px`,
-            left: `${(particle * 13) % 100}%`,
-            top: `${(particle * 17) % 100}%`,
+            width: `${4 + (particle % 5) * 3}px`,
+            height: `${4 + (particle % 5) * 3}px`,
+            left: `${(particle * 11) % 100}%`,
+            top: `${(particle * 19) % 100}%`,
           }}
         />
       ))}
 
-      {/* GRID OVERLAY */}
+      {/* GRID */}
       <div
         className="
           absolute inset-0
-          bg-[linear-gradient(to_right,#cbd5e110_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e110_1px,transparent_1px)]
-          bg-[size:72px_72px]
+          bg-[linear-gradient(to_right,#94a3b810_1px,transparent_1px),linear-gradient(to_bottom,#94a3b810_1px,transparent_1px)]
+          bg-[size:64px_64px]
         "
       />
 
-      {/* SOFT LIGHT OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-white/40" />
-    </div>
+      {/* LIGHT OVERLAY */}
+      <div className="absolute inset-0 bg-white/20" />
+    </motion.div>
   );
 }
