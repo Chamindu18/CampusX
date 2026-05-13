@@ -1,10 +1,12 @@
 "use client";
 
 /**
- * Login page.
+ * Real login page connected to backend API.
  */
 
 import Link from "next/link";
+
+import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
 
@@ -24,20 +26,28 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  /**
+   * Next.js router.
+   */
+  const router = useRouter();
+
   /**
    * React Hook Form setup.
    */
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: {
+      errors,
+      isSubmitting,
+    },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(
+      loginSchema
+    ),
   });
-  const router = useRouter();
 
   /**
    * Form submit handler.
@@ -45,17 +55,65 @@ export default function LoginPage() {
   async function onSubmit(
     data: LoginFormValues
   ) {
-    console.log(data);
+    try {
+      /**
+       * Send login request.
+       */
+      const response =
+        await fetch(
+          "/api/auth/login",
+          {
+            method: "POST",
 
-    /**
-     * Simulate request.
-     */
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1500)
-    );
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-    toast.success("Login successful");
-    router.push("/dashboard");
+            body: JSON.stringify(
+              data
+            ),
+          }
+        );
+
+      /**
+       * Parse backend response.
+       */
+      const result =
+        await response.json();
+
+      /**
+       * Handle backend errors.
+       */
+      if (!response.ok) {
+        toast.error(
+          result.error ||
+            "Login failed"
+        );
+
+        return;
+      }
+
+      /**
+       * Success state.
+       */
+      toast.success(
+        "Login successful"
+      );
+
+      /**
+       * Redirect authenticated user.
+       */
+      router.push(
+        "/dashboard"
+      );
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+    }
   }
 
   return (
@@ -74,13 +132,21 @@ export default function LoginPage() {
     >
       <AuthCard
         title="Welcome back"
-        description="Login to continue your CampusX experience."
+        description="
+          Login to continue your CampusX
+          marketplace experience.
+        "
       >
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(
+            onSubmit
+          )}
           className="space-y-6"
         >
-          {/* Email */}
+          {/* ========================= */}
+          {/* EMAIL */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="email">
               University Email
@@ -95,11 +161,16 @@ export default function LoginPage() {
             />
 
             <FormError
-              message={errors.email?.message}
+              message={
+                errors.email?.message
+              }
             />
           </div>
 
-          {/* Password */}
+          {/* ========================= */}
+          {/* PASSWORD */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="password">
               Password
@@ -110,20 +181,30 @@ export default function LoginPage() {
               type="password"
               placeholder="Enter your password"
               className="mt-2"
-              {...register("password")}
+              {...register(
+                "password"
+              )}
             />
 
             <FormError
-              message={errors.password?.message}
+              message={
+                errors.password
+                  ?.message
+              }
             />
           </div>
 
-          {/* Submit */}
+          {/* ========================= */}
+          {/* SUBMIT BUTTON */}
+          {/* ========================= */}
+
           <Button
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting
+            }
           >
             {isSubmitting
               ? "Logging in..."
@@ -131,12 +212,21 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Footer */}
+        {/* ========================= */}
+        {/* FOOTER */}
+        {/* ========================= */}
+
         <p className="mt-8 text-center text-sm text-slate-600">
           Don&apos;t have an account?{" "}
+
           <Link
             href="/signup"
-            className="font-medium text-blue-600 hover:text-blue-700"
+            className="
+              font-medium
+              text-blue-600
+              transition
+              hover:text-blue-700
+            "
           >
             Create account
           </Link>

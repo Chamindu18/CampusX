@@ -1,10 +1,12 @@
 "use client";
 
 /**
- * Signup page.
+ * Real signup page connected to backend API.
  */
 
 import Link from "next/link";
+
+import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
 
@@ -24,39 +26,94 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   /**
-   * Form setup.
+   * Next.js router.
+   */
+  const router = useRouter();
+
+  /**
+   * React Hook Form setup.
    */
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: {
+      errors,
+      isSubmitting,
+    },
   } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(
+      signupSchema
+    ),
   });
 
-  const router = useRouter();
-
   /**
-   * Submit handler.
+   * Form submit handler.
    */
   async function onSubmit(
     data: SignupFormValues
   ) {
-    console.log(data);
+    try {
+      /**
+       * Send signup request.
+       */
+      const response =
+        await fetch(
+          "/api/auth/signup",
+          {
+            method: "POST",
 
-    /**
-     * Simulated request.
-     */
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1500)
-    );
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-    toast.success("Account created");
-    router.push("/login");
+            body: JSON.stringify(
+              data
+            ),
+          }
+        );
+
+      /**
+       * Parse response.
+       */
+      const result =
+        await response.json();
+
+      /**
+       * Handle backend errors.
+       */
+      if (!response.ok) {
+        toast.error(
+          result.error ||
+            "Signup failed"
+        );
+
+        return;
+      }
+
+      /**
+       * Success state.
+       */
+      toast.success(
+        "Account created successfully"
+      );
+
+      /**
+       * Redirect to dashboard.
+       */
+      router.push(
+        "/dashboard"
+      );
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+    }
   }
 
   return (
@@ -75,13 +132,21 @@ export default function SignupPage() {
     >
       <AuthCard
         title="Create account"
-        description="Join CampusX and start connecting with your campus community."
+        description="
+          Join CampusX and connect with your
+          campus marketplace community.
+        "
       >
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(
+            onSubmit
+          )}
           className="space-y-6"
         >
-          {/* Name */}
+          {/* ========================= */}
+          {/* FULL NAME */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="name">
               Full Name
@@ -96,11 +161,16 @@ export default function SignupPage() {
             />
 
             <FormError
-              message={errors.name?.message}
+              message={
+                errors.name?.message
+              }
             />
           </div>
 
-          {/* Email */}
+          {/* ========================= */}
+          {/* EMAIL */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="email">
               University Email
@@ -115,11 +185,16 @@ export default function SignupPage() {
             />
 
             <FormError
-              message={errors.email?.message}
+              message={
+                errors.email?.message
+              }
             />
           </div>
 
-          {/* Password */}
+          {/* ========================= */}
+          {/* PASSWORD */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="password">
               Password
@@ -130,20 +205,30 @@ export default function SignupPage() {
               type="password"
               placeholder="Create a password"
               className="mt-2"
-              {...register("password")}
+              {...register(
+                "password"
+              )}
             />
 
             <FormError
-              message={errors.password?.message}
+              message={
+                errors.password
+                  ?.message
+              }
             />
           </div>
 
-          {/* Submit */}
+          {/* ========================= */}
+          {/* SUBMIT BUTTON */}
+          {/* ========================= */}
+
           <Button
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting
+            }
           >
             {isSubmitting
               ? "Creating account..."
@@ -151,12 +236,21 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        {/* Footer */}
+        {/* ========================= */}
+        {/* FOOTER */}
+        {/* ========================= */}
+
         <p className="mt-8 text-center text-sm text-slate-600">
           Already have an account?{" "}
+
           <Link
             href="/login"
-            className="font-medium text-blue-600 hover:text-blue-700"
+            className="
+              font-medium
+              text-blue-600
+              transition
+              hover:text-blue-700
+            "
           >
             Login
           </Link>
