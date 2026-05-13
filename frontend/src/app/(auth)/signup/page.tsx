@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   /**
@@ -36,6 +37,8 @@ export default function SignupPage() {
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
   });
+
+  const router = useRouter();
 
   /**
    * Submit handler.
@@ -53,6 +56,7 @@ export default function SignupPage() {
     );
 
     toast.success("Account created");
+    router.push("/login");
   }
 
   return (

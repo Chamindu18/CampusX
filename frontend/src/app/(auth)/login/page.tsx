@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   /**
@@ -36,6 +37,7 @@ export default function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
+  const router = useRouter();
 
   /**
    * Form submit handler.
@@ -53,6 +55,7 @@ export default function LoginPage() {
     );
 
     toast.success("Login successful");
+    router.push("/dashboard");
   }
 
   return (
