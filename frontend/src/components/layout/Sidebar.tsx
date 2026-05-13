@@ -2,17 +2,82 @@
 
 /**
  * Platform sidebar navigation.
+ *
+ * Features:
+ * - active route highlighting
+ * - animated hover interactions
+ * - create listing navigation
+ * - glassmorphism styling
+ * - responsive vertical layout
  */
 
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 
-import { navigationItems } from "@/constants/navigation";
+import {
+  LayoutDashboard,
+  Store,
+  Gavel,
+  MessageSquare,
+  User,
+  Settings,
+  PlusSquare,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Sidebar navigation items.
+ */
+const navigationItems = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+
+  {
+    title: "Marketplace",
+    href: "/marketplace",
+    icon: Store,
+  },
+
+  {
+    title: "Create Listing",
+    href: "/create-listing",
+    icon: PlusSquare,
+  },
+
+  {
+    title: "Auctions",
+    href: "/auctions",
+    icon: Gavel,
+  },
+
+  {
+    title: "Messages",
+    href: "/messages",
+    icon: MessageSquare,
+  },
+
+  {
+    title: "Profile",
+    href: "/profile",
+    icon: User,
+  },
+
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
+  },
+];
+
 export function Sidebar() {
+  /**
+   * Current active pathname.
+   */
   const pathname = usePathname();
 
   return (
@@ -34,7 +99,10 @@ export function Sidebar() {
         backdrop-blur-xl
       "
     >
-      {/* Brand */}
+      {/* ========================= */}
+      {/* BRAND */}
+      {/* ========================= */}
+
       <div>
         <Link
           href="/"
@@ -53,12 +121,21 @@ export function Sidebar() {
         </p>
       </div>
 
-      {/* Navigation */}
+      {/* ========================= */}
+      {/* NAVIGATION */}
+      {/* ========================= */}
+
       <nav className="mt-12 flex flex-1 flex-col gap-2">
         {navigationItems.map((item) => {
+          /**
+           * Detect active route.
+           */
           const isActive =
             pathname === item.href;
 
+          /**
+           * Dynamic icon component.
+           */
           const Icon = item.icon;
 
           return (
@@ -67,6 +144,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 `
+                  group
                   flex
                   items-center
                   gap-4
@@ -78,11 +156,13 @@ export function Sidebar() {
                   transition-all
                   duration-200
                 `,
+
                 isActive
                   ? `
                     bg-blue-600
                     text-white
                     shadow-lg
+                    shadow-blue-200/50
                   `
                   : `
                     text-slate-600
@@ -91,30 +171,83 @@ export function Sidebar() {
                   `
               )}
             >
-              <Icon className="h-5 w-5" />
+              {/* Icon */}
+              <Icon
+                className={cn(
+                  `
+                    h-5
+                    w-5
+                    transition-transform
+                    duration-200
+                    group-hover:scale-110
+                  `,
+                  isActive
+                    ? "text-white"
+                    : "text-slate-500"
+                )}
+              />
 
-              {item.title}
+              {/* Title */}
+              <span>{item.title}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom User Area */}
+      {/* ========================= */}
+      {/* BOTTOM USER CARD */}
+      {/* ========================= */}
+
       <div
         className="
-          rounded-2xl
+          rounded-3xl
           border
           border-white/30
           bg-white/60
-          p-4
+          p-5
+          shadow-lg
+          shadow-slate-200/30
         "
       >
-        <p className="text-sm font-medium text-slate-900">
-          CampusX Platform
-        </p>
+        {/* Top Row */}
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div
+            className="
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-blue-600
+              text-sm
+              font-bold
+              text-white
+            "
+          >
+            CX
+          </div>
 
-        <p className="mt-1 text-xs text-slate-500">
-          Connected student workspace
+          {/* User Info */}
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              CampusX User
+            </p>
+
+            <p className="text-xs text-slate-500">
+              Connected workspace
+            </p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="my-5 h-px bg-slate-200" />
+
+        {/* Footer Text */}
+        <p className="text-xs leading-6 text-slate-500">
+          Buy, sell, and connect safely within
+          trusted campus communities.
         </p>
       </div>
     </aside>

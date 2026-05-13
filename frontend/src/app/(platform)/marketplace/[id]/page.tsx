@@ -14,6 +14,7 @@ import { mockListings } from "@/constants/mock-listings";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import Link from "next/link";
 
 interface ListingPageProps {
   params: {
@@ -162,9 +163,11 @@ export default function ListingPage({
 
           {/* Actions */}
           <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-            <Button size="lg">
-              Contact Seller
-            </Button>
+            <Link href="/messages">
+              <Button size="lg">
+                Contact Seller
+              </Button>
+            </Link>
 
             <Button
               size="lg"
