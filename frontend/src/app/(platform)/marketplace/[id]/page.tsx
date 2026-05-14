@@ -1,40 +1,58 @@
 /**
- * Dynamic marketplace listing page.
+ * Real dynamic marketplace listing page.
  */
+
+import Link from "next/link";
 
 import { notFound } from "next/navigation";
 
 import {
-  MapPin,
   Clock,
+  MapPin,
   ShieldCheck,
 } from "lucide-react";
 
-import { mockListings } from "@/constants/mock-listings";
+import { prisma } from "@/lib/prisma";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import Link from "next/link";
 
 interface ListingPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function ListingPage({
+export default async function ListingPage({
   params,
 }: ListingPageProps) {
   /**
-   * Find listing by id.
+   * Dynamic route params.
    */
-  const listing = mockListings.find(
-    (item) =>
-      item.id === Number(params.id)
-  );
+  const { id } =
+    await params;
 
   /**
-   * Handle invalid listing.
+   * Find listing.
+   */
+  const listing =
+    await prisma.listing.findUnique({
+      where: {
+        id,
+      },
+
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+  /**
+   * Invalid listing.
    */
   if (!listing) {
     notFound();
@@ -66,18 +84,20 @@ export default function ListingPage({
 
             {/* Gallery */}
             <div className="grid grid-cols-3 gap-4 p-4">
-              {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="
-                    h-28
-                    rounded-2xl
-                    bg-gradient-to-br
-                    from-blue-100
-                    to-indigo-100
-                  "
-                />
-              ))}
+              {[1, 2, 3].map(
+                (item) => (
+                  <div
+                    key={item}
+                    className="
+                      h-28
+                      rounded-2xl
+                      bg-gradient-to-br
+                      from-blue-100
+                      to-indigo-100
+                    "
+                  />
+                )
+              )}
             </div>
           </Card>
         </div>
@@ -107,7 +127,8 @@ export default function ListingPage({
 
           {/* Price */}
           <div className="mt-8 text-4xl font-black text-blue-600">
-            {listing.price}
+            LKR{" "}
+            {listing.price.toLocaleString()}
           </div>
 
           {/* Meta */}
@@ -115,19 +136,25 @@ export default function ListingPage({
             <div className="flex items-center gap-3 text-slate-600">
               <ShieldCheck className="h-5 w-5" />
 
-              <span>{listing.condition}</span>
+              <span>
+                {listing.condition}
+              </span>
             </div>
 
             <div className="flex items-center gap-3 text-slate-600">
               <MapPin className="h-5 w-5" />
 
-              <span>{listing.location}</span>
+              <span>
+                {listing.location}
+              </span>
             </div>
 
             <div className="flex items-center gap-3 text-slate-600">
               <Clock className="h-5 w-5" />
 
-              <span>{listing.posted}</span>
+              <span>
+                Recently posted
+              </span>
             </div>
           </div>
 
@@ -138,7 +165,9 @@ export default function ListingPage({
             </h2>
 
             <p className="mt-5 leading-8 text-slate-600">
-              {listing.description}
+              {
+                listing.description
+              }
             </p>
           </div>
 
@@ -157,8 +186,16 @@ export default function ListingPage({
             </p>
 
             <h3 className="mt-2 text-xl font-bold text-slate-900">
-              {listing.seller}
+              {
+                listing.user.name
+              }
             </h3>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {
+                listing.user.email
+              }
+            </p>
           </Card>
 
           {/* Actions */}

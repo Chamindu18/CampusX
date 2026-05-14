@@ -2,9 +2,18 @@
 
 /**
  * Create marketplace listing page.
+ *
+ * Features:
+ * - real database integration
+ * - zod validation
+ * - authenticated listing creation
+ * - loading states
+ * - toast notifications
  */
 
 import { motion } from "framer-motion";
+
+import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 
@@ -25,32 +34,102 @@ import { Label } from "@/components/ui/Label";
 
 export default function CreateListingPage() {
   /**
-   * Form setup.
+   * Next.js router.
+   */
+  const router = useRouter();
+
+  /**
+   * React Hook Form setup.
    */
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: {
+      errors,
+      isSubmitting,
+    },
   } = useForm<ListingFormValues>({
-    resolver: zodResolver(listingSchema),
+    resolver: zodResolver(
+      listingSchema
+    ),
   });
 
   /**
-   * Submit handler.
+   * Submit listing.
    */
   async function onSubmit(
     data: ListingFormValues
   ) {
-    console.log(data);
+    try {
+      /**
+       * Create listing request.
+       */
+      const response =
+        await fetch(
+          "/api/listings",
+          {
+            method: "POST",
 
-    /**
-     * Simulated request.
-     */
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1500)
-    );
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-    toast.success("Listing created");
+            body: JSON.stringify(
+              data
+            ),
+          }
+        );
+
+      /**
+       * Parse response.
+       */
+      const result =
+        await response.json();
+
+      /**
+       * Backend validation errors.
+       */
+      if (!response.ok) {
+        toast.error(
+          result.error ||
+            "Failed to create listing"
+        );
+
+        return;
+      }
+
+      /**
+       * Success state.
+       */
+      toast.success(
+        "Listing published successfully"
+      );
+
+      /**
+       * Reset form.
+       */
+      reset();
+
+      /**
+       * Redirect to marketplace.
+       */
+      router.push(
+        "/marketplace"
+      );
+
+      /**
+       * Refresh server data.
+       */
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+    }
   }
 
   return (
@@ -68,19 +147,25 @@ export default function CreateListingPage() {
       }}
       className="mx-auto max-w-4xl"
     >
-      {/* Heading */}
+      {/* ========================= */}
+      {/* PAGE HEADER */}
+      {/* ========================= */}
+
       <div>
         <h1 className="text-5xl font-black tracking-tight text-slate-900">
           Create Listing
         </h1>
 
         <p className="mt-4 text-lg text-slate-600">
-          Publish a new marketplace listing for
-          your campus community.
+          Publish a new listing for your campus
+          marketplace community.
         </p>
       </div>
 
-      {/* Form */}
+      {/* ========================= */}
+      {/* FORM CARD */}
+      {/* ========================= */}
+
       <Card
         className="
           mt-12
@@ -91,10 +176,15 @@ export default function CreateListingPage() {
         "
       >
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(
+            onSubmit
+          )}
           className="space-y-8"
         >
-          {/* Title */}
+          {/* ========================= */}
+          {/* TITLE */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="title">
               Listing Title
@@ -108,11 +198,16 @@ export default function CreateListingPage() {
             />
 
             <FormError
-              message={errors.title?.message}
+              message={
+                errors.title?.message
+              }
             />
           </div>
 
-          {/* Category */}
+          {/* ========================= */}
+          {/* CATEGORY */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="category">
               Category
@@ -130,12 +225,16 @@ export default function CreateListingPage() {
                 bg-white/80
                 px-4
                 text-sm
+                text-slate-700
                 outline-none
+                transition
                 focus:border-blue-500
                 focus:ring-4
                 focus:ring-blue-100
               "
-              {...register("category")}
+              {...register(
+                "category"
+              )}
             >
               <option value="">
                 Select category
@@ -156,32 +255,47 @@ export default function CreateListingPage() {
               <option value="Furniture">
                 Furniture
               </option>
+
+              <option value="Accessories">
+                Accessories
+              </option>
             </select>
 
             <FormError
-              message={errors.category?.message}
+              message={
+                errors.category
+                  ?.message
+              }
             />
           </div>
 
-          {/* Price */}
+          {/* ========================= */}
+          {/* PRICE */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="price">
-              Price
+              Price (LKR)
             </Label>
 
             <Input
               id="price"
-              placeholder="LKR 50,000"
+              placeholder="50000"
               className="mt-2"
               {...register("price")}
             />
 
             <FormError
-              message={errors.price?.message}
+              message={
+                errors.price?.message
+              }
             />
           </div>
 
-          {/* Description */}
+          {/* ========================= */}
+          {/* DESCRIPTION */}
+          {/* ========================= */}
+
           <div>
             <Label htmlFor="description">
               Description
@@ -190,7 +304,7 @@ export default function CreateListingPage() {
             <textarea
               id="description"
               rows={6}
-              placeholder="Describe your item..."
+              placeholder="Describe your item in detail..."
               className="
                 mt-2
                 w-full
@@ -201,6 +315,7 @@ export default function CreateListingPage() {
                 px-4
                 py-4
                 text-sm
+                text-slate-700
                 outline-none
                 transition
                 placeholder:text-slate-400
@@ -208,20 +323,26 @@ export default function CreateListingPage() {
                 focus:ring-4
                 focus:ring-blue-100
               "
-              {...register("description")}
+              {...register(
+                "description"
+              )}
             />
 
             <FormError
               message={
-                errors.description?.message
+                errors.description
+                  ?.message
               }
             />
           </div>
 
-          {/* Upload Area */}
+          {/* ========================= */}
+          {/* IMAGE PLACEHOLDER */}
+          {/* ========================= */}
+
           <div>
             <Label>
-              Upload Images
+              Listing Images
             </Label>
 
             <div
@@ -241,22 +362,28 @@ export default function CreateListingPage() {
             >
               <div>
                 <p className="font-medium text-slate-700">
-                  Drag and drop images here
+                  Image upload coming soon
                 </p>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  PNG, JPG up to 10MB
+                  UploadThing integration will be
+                  added later.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Submit */}
+          {/* ========================= */}
+          {/* SUBMIT */}
+          {/* ========================= */}
+
           <div className="pt-4">
             <Button
               type="submit"
               size="lg"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting
+              }
             >
               {isSubmitting
                 ? "Publishing..."
