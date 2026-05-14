@@ -12,95 +12,205 @@ datasource db {
 }
 
 /**
- * User model.
+ * =====================================================
  */
-model User {
-  id        String   @id @default(cuid())
+/**
+ * USER MODEL
+ */
+/**
+ * =====================================================
+ */
 
-  name      String
-  email     String   @unique
-  password  String
+model User {
+  id String @id @default(cuid())
+
+  name String
+
+  email String @unique
+
+  password String
 
   university String?
 
-  bio       String?
+  bio String?
 
   createdAt DateTime @default(now())
+
   updatedAt DateTime @updatedAt
 
-  listings  Listing[]
+  /**
+   * User marketplace listings.
+   */
+  listings Listing[]
 
-  messages  Message[]
+  /**
+   * User chat messages.
+   */
+  messages Message[]
 
+  /**
+   * Saved marketplace listings.
+   */
   savedListings SavedListing[]
 }
 
 /**
- * Marketplace listing model.
+ * =====================================================
  */
-model Listing {
-  id          String   @id @default(cuid())
+/**
+ * LISTING MODEL
+ */
+/**
+ * =====================================================
+ */
 
-  title       String
+model Listing {
+  id String @id @default(cuid())
+
+  title String
+
   description String
 
-  category    String
+  category String
 
-  price       Float
+  /**
+   * Stored as float for sorting/filtering.
+   */
+  price Float
 
-  condition   String
+  /**
+   * Uploaded cloud image URLs.
+   */
+  imageUrls String[]
 
-  location    String
+  /**
+   * Listing condition.
+   */
+  condition String
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  userId      String
-  user        User @relation(fields: [userId], references: [id])
-
-  savedBy     SavedListing[]
-}
-
-/**
- * Conversation model.
- */
-model Conversation {
-  id        String   @id @default(cuid())
+  /**
+   * Campus location.
+   */
+  location String
 
   createdAt DateTime @default(now())
 
-  messages  Message[]
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Owner relation.
+   */
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /**
+   * Saved users relation.
+   */
+  savedBy SavedListing[]
+
+  /**
+   * Indexes.
+   */
+  @@index([userId])
+  @@index([category])
+  @@index([createdAt])
 }
 
 /**
- * Message model.
+ * =====================================================
  */
+/**
+ * CONVERSATION MODEL
+ */
+/**
+ * =====================================================
+ */
+
+model Conversation {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+
+  /**
+   * Conversation messages.
+   */
+  messages Message[]
+}
+
+/**
+ * =====================================================
+ */
+/**
+ * MESSAGE MODEL
+ */
+/**
+ * =====================================================
+ */
+
 model Message {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  content        String
+  content String
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  userId         String
-  user           User @relation(fields: [userId], references: [id])
+  /**
+   * Sender relation.
+   */
+  userId String
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /**
+   * Conversation relation.
+   */
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /**
+   * Indexes.
+   */
+  @@index([userId])
+  @@index([conversationId])
+  @@index([createdAt])
 }
 
 /**
- * Saved listings model.
+ * =====================================================
  */
-model SavedListing {
-  id        String @id @default(cuid())
+/**
+ * SAVED LISTINGS MODEL
+ */
+/**
+ * =====================================================
+ */
 
-  userId    String
+model SavedListing {
+  id String @id @default(cuid())
+
+  userId String
+
   listingId String
 
-  user      User @relation(fields: [userId], references: [id])
+  /**
+   * User relation.
+   */
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  listing   Listing @relation(fields: [listingId], references: [id])
+  /**
+   * Listing relation.
+   */
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
+  /**
+   * Prevent duplicate saves.
+   */
   @@unique([userId, listingId])
+  /**
+   * Indexes.
+   */
+  @@index([userId])
+  @@index([listingId])
 }

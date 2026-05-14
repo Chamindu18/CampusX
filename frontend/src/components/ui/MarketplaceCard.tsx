@@ -2,30 +2,77 @@
 
 /**
  * Marketplace listing card.
+ *
+ * Features:
+ * - dynamic marketplace routing
+ * - uploaded image support
+ * - smooth hover interactions
+ * - responsive design
+ * - fallback image state
  */
+
+import Link from "next/link";
+
+import Image from "next/image";
 
 import { motion } from "framer-motion";
 
+import { MapPin } from "lucide-react";
+
 import { Card } from "@/components/ui/Card";
-import Link from "next/link";
 
 interface MarketplaceCardProps {
+  /**
+   * Database listing ID.
+   */
+  id: string;
+
+  /**
+   * Listing title.
+   */
   title: string;
+
+  /**
+   * Listing category.
+   */
   category: string;
-  price: string;
+
+  /**
+   * Listing price.
+   */
+  price: number;
+
+  /**
+   * Item condition.
+   */
   condition: string;
+
+  /**
+   * Campus location.
+   */
   location: string;
-  id: number;
+
+  /**
+   * Uploaded image URLs.
+   */
+  imageUrls?: string[];
 }
 
 export function MarketplaceCard({
+  id,
   title,
   category,
   price,
   condition,
   location,
-  id,
+  imageUrls = [],
 }: MarketplaceCardProps) {
+  /**
+   * Primary listing image.
+   */
+  const primaryImage =
+    imageUrls[0];
+
   return (
     <motion.div
       whileHover={{
@@ -35,46 +82,89 @@ export function MarketplaceCard({
         duration: 0.25,
       }}
     >
-      <Link href={`/marketplace/${id}`}>
+      <Link
+        href={`/marketplace/${id}`}
+      >
         <Card
           className="
             group
             overflow-hidden
             border-white/40
             bg-white/70
+            shadow-lg
+            shadow-slate-200/30
             backdrop-blur-xl
             transition-all
             duration-300
             hover:shadow-2xl
           "
         >
-          {/* Image Placeholder */}
+          {/* ========================= */}
+          {/* IMAGE SECTION */}
+          {/* ========================= */}
+
           <div
             className="
               relative
-              h-52
+              h-56
               overflow-hidden
-              bg-gradient-to-br
-              from-blue-100
-              via-indigo-100
-              to-cyan-100
+              bg-slate-100
             "
           >
-            {/* Glow */}
+            {primaryImage ? (
+              <Image
+                src={primaryImage}
+                alt={title}
+                fill
+                className="
+                  object-cover
+                  transition-transform
+                  duration-500
+                  group-hover:scale-105
+                "
+              />
+            ) : (
+              <div
+                className="
+                  flex
+                  h-full
+                  items-center
+                  justify-center
+                  bg-gradient-to-br
+                  from-blue-100
+                  via-indigo-100
+                  to-cyan-100
+                "
+              >
+                <span
+                  className="
+                    text-sm
+                    font-medium
+                    text-slate-500
+                  "
+                >
+                  No Image
+                </span>
+              </div>
+            )}
+
+            {/* Hover Overlay */}
             <div
               className="
                 absolute
                 inset-0
-                opacity-0
+                bg-black/0
                 transition
-                duration-500
-                group-hover:opacity-100
-                bg-white/10
+                duration-300
+                group-hover:bg-black/5
               "
             />
           </div>
 
-          {/* Content */}
+          {/* ========================= */}
+          {/* CONTENT */}
+          {/* ========================= */}
+
           <div className="p-6">
             {/* Category */}
             <div
@@ -85,7 +175,7 @@ export function MarketplaceCard({
                 px-3
                 py-1
                 text-xs
-                font-medium
+                font-semibold
                 text-blue-700
               "
             >
@@ -93,23 +183,46 @@ export function MarketplaceCard({
             </div>
 
             {/* Title */}
-            <h3 className="mt-5 text-2xl font-bold text-slate-900">
+            <h3
+              className="
+                mt-5
+                line-clamp-1
+                text-2xl
+                font-bold
+                text-slate-900
+              "
+            >
               {title}
             </h3>
 
             {/* Meta */}
-            <div className="mt-5 space-y-2 text-sm text-slate-500">
+            <div className="mt-5 space-y-3 text-sm text-slate-500">
               <p>{condition}</p>
 
-              <p>{location}</p>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+
+                <span className="line-clamp-1">
+                  {location}
+                </span>
+              </div>
             </div>
 
             {/* Footer */}
             <div className="mt-8 flex items-center justify-between">
-              <span className="text-2xl font-black text-slate-900">
-                {price}
+              {/* Price */}
+              <span
+                className="
+                  text-2xl
+                  font-black
+                  text-slate-900
+                "
+              >
+                LKR{" "}
+                {price.toLocaleString()}
               </span>
 
+              {/* CTA */}
               <span
                 className="
                   rounded-xl
@@ -119,6 +232,8 @@ export function MarketplaceCard({
                   text-sm
                   font-medium
                   text-white
+                  transition
+                  group-hover:bg-blue-700
                 "
               >
                 View
