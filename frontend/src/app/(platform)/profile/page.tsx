@@ -1,200 +1,228 @@
 "use client";
 
 /**
- * User profile page.
+ * Platform topbar.
+ *
+ * Features:
+ * - authenticated user display
+ * - logout functionality
+ * - search UI
+ * - notifications
  */
 
-import { motion } from "framer-motion";
-
 import {
-  Mail,
-  School,
-  Calendar,
+  Bell,
+  LogOut,
+  Search,
 } from "lucide-react";
 
-import { mockUser } from "@/constants/mock-user";
+import { useRouter } from "next/navigation";
 
-import { Card } from "@/components/ui/Card";
-import { ProfileListingCard } from "@/components/ui/ProfileListingCard";
+import toast from "react-hot-toast";
 
-export default function ProfilePage() {
+import { useCurrentUser } from "@/hooks/use-current-user";
+
+export function Topbar() {
+  /**
+   * Current authenticated user.
+   */
+  const {
+    user,
+    isLoading,
+  } = useCurrentUser();
+
+  /**
+   * Next.js router.
+   */
+  const router = useRouter();
+
+  /**
+   * Logout handler.
+   */
+  async function handleLogout() {
+    try {
+      /**
+       * Logout request.
+       */
+      const response =
+        await fetch(
+          "/api/auth/logout",
+          {
+            method: "POST",
+          }
+        );
+
+      /**
+       * Handle backend failure.
+       */
+      if (!response.ok) {
+        toast.error(
+          "Logout failed"
+        );
+
+        return;
+      }
+
+      /**
+       * Success state.
+       */
+      toast.success(
+        "Logged out successfully"
+      );
+
+      /**
+       * Redirect to login.
+       */
+      router.push("/login");
+
+      /**
+       * Refresh route state.
+       */
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+    }
+  }
+
   return (
-    <div>
-      {/* ================================= */}
-      {/* PROFILE HEADER */}
-      {/* ================================= */}
+    <header
+      className="
+        sticky
+        top-0
+        z-30
+        flex
+        h-24
+        items-center
+        justify-between
+        border-b
+        border-white/20
+        bg-white/50
+        px-10
+        backdrop-blur-xl
+      "
+    >
+      {/* ========================= */}
+      {/* SEARCH */}
+      {/* ========================= */}
 
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: 20,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
+      <div
         className="
-          overflow-hidden
-          rounded-[32px]
+          flex
+          h-14
+          w-full
+          max-w-md
+          items-center
+          gap-3
+          rounded-2xl
           border
-          border-white/40
+          border-slate-200
           bg-white/70
-          shadow-xl
-          shadow-slate-200/30
-          backdrop-blur-xl
+          px-5
         "
       >
-        {/* Banner */}
-        <div
+        <Search className="h-5 w-5 text-slate-500" />
+
+        <input
+          type="text"
+          placeholder="Search marketplace..."
           className="
-            h-48
-            bg-gradient-to-br
-            from-blue-500
-            via-indigo-500
-            to-cyan-500
+            w-full
+            bg-transparent
+            text-sm
+            text-slate-700
+            outline-none
+            placeholder:text-slate-400
           "
         />
+      </div>
 
-        {/* Content */}
-        <div className="relative px-10 pb-10">
+      {/* ========================= */}
+      {/* RIGHT SIDE */}
+      {/* ========================= */}
+
+      <div className="flex items-center gap-5">
+        {/* Notifications */}
+        <button
+          className="
+            flex
+            h-12
+            w-12
+            items-center
+            justify-center
+            rounded-2xl
+            bg-white/70
+            text-slate-700
+            transition
+            hover:bg-white
+          "
+        >
+          <Bell className="h-5 w-5" />
+        </button>
+
+        {/* User Section */}
+        <div className="flex items-center gap-4">
+          {/* User Info */}
+          <div className="hidden text-right md:block">
+            <p className="text-sm font-semibold text-slate-900">
+              {isLoading
+                ? "Loading..."
+                : user?.name ||
+                  "Unknown User"}
+            </p>
+
+            <p className="text-xs text-slate-500">
+              {user?.email ||
+                "No email"}
+            </p>
+          </div>
+
           {/* Avatar */}
           <div
             className="
-              absolute
-              -top-16
               flex
-              h-32
-              w-32
+              h-12
+              w-12
               items-center
               justify-center
-              rounded-[28px]
-              border-4
-              border-white
-              bg-white
-              text-4xl
-              font-black
-              text-slate-900
-              shadow-xl
+              rounded-2xl
+              bg-blue-600
+              text-sm
+              font-bold
+              text-white
             "
           >
-            CX
+            {user?.name
+              ?.charAt(0)
+              ?.toUpperCase() ||
+              "U"}
           </div>
 
-          {/* Profile Content */}
-          <div className="pt-24">
-            <div className="flex flex-col gap-10 xl:flex-row xl:items-start xl:justify-between">
-              {/* Left */}
-              <div>
-                <h1 className="text-5xl font-black tracking-tight text-slate-900">
-                  {mockUser.name}
-                </h1>
-
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                  {mockUser.bio}
-                </p>
-
-                {/* Meta */}
-                <div className="mt-8 flex flex-col gap-4 text-sm text-slate-500">
-                  <div className="flex items-center gap-3">
-                    <School className="h-5 w-5" />
-
-                    <span>
-                      {mockUser.university}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5" />
-
-                    <span>
-                      {mockUser.email}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5" />
-
-                    <span>
-                      {mockUser.joined}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-5">
-                <Card className="border-white/40 bg-white/70 p-6 text-center backdrop-blur-xl">
-                  <div className="text-4xl font-black text-slate-900">
-                    12
-                  </div>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    Listings
-                  </p>
-                </Card>
-
-                <Card className="border-white/40 bg-white/70 p-6 text-center backdrop-blur-xl">
-                  <div className="text-4xl font-black text-slate-900">
-                    8
-                  </div>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    Transactions
-                  </p>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ================================= */}
-      {/* USER LISTINGS */}
-      {/* ================================= */}
-
-      <div className="mt-16">
-        {/* Heading */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-4xl font-black tracking-tight text-slate-900">
-              My Listings
-            </h2>
-
-            <p className="mt-3 text-slate-500">
-              Manage your marketplace listings and
-              activity.
-            </p>
-          </div>
-        </div>
-
-        {/* Listings Grid */}
-        <div className="mt-10 grid gap-8 lg:grid-cols-2">
-          {mockUser.listings.map(
-            (listing, index) => (
-              <motion.div
-                key={listing.id}
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                transition={{
-                  delay: index * 0.08,
-                }}
-              >
-                <ProfileListingCard
-                  title={listing.title}
-                  price={listing.price}
-                  status={listing.status}
-                />
-              </motion.div>
-            )
-          )}
+          {/* Logout */}
+          <button
+            onClick={
+              handleLogout
+            }
+            className="
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-red-100
+              text-red-600
+              transition
+              hover:bg-red-200
+            "
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

@@ -4,9 +4,49 @@
  * Platform topbar.
  */
 
-import { Bell, Search } from "lucide-react";
+import { Bell, LogOut, Search } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
+import toast from "react-hot-toast";
+
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export function Topbar() {
+  /**
+   * Current authenticated user.
+   */
+  const { user } =
+    useCurrentUser();
+
+  const router = useRouter();
+
+  /**
+   * Logout handler.
+   */
+  async function handleLogout() {
+    try {
+      await fetch(
+        "/api/auth/logout",
+        {
+          method: "POST",
+        }
+      );
+
+      toast.success(
+        "Logged out"
+      );
+
+      router.push("/login");
+
+      router.refresh();
+    } catch {
+      toast.error(
+        "Logout failed"
+      );
+    }
+  }
+
   return (
     <header
       className="
@@ -24,7 +64,7 @@ export function Topbar() {
         backdrop-blur-xl
       "
     >
-      {/* Search */}
+      {/* SEARCH */}
       <div
         className="
           flex
@@ -54,7 +94,7 @@ export function Topbar() {
         />
       </div>
 
-      {/* Actions */}
+      {/* RIGHT ACTIONS */}
       <div className="flex items-center gap-5">
         {/* Notifications */}
         <button
@@ -74,22 +114,61 @@ export function Topbar() {
           <Bell className="h-5 w-5" />
         </button>
 
-        {/* Avatar */}
-        <div
-          className="
-            flex
-            h-12
-            w-12
-            items-center
-            justify-center
-            rounded-2xl
-            bg-blue-600
-            text-sm
-            font-bold
-            text-white
-          "
-        >
-          CX
+        {/* USER */}
+        <div className="flex items-center gap-4">
+          {/* User Info */}
+          <div className="hidden text-right md:block">
+            <p className="text-sm font-semibold text-slate-900">
+              {user?.name ||
+                "Loading..."}
+            </p>
+
+            <p className="text-xs text-slate-500">
+              {user?.email}
+            </p>
+          </div>
+
+          {/* Avatar */}
+          <div
+            className="
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-blue-600
+              text-sm
+              font-bold
+              text-white
+            "
+          >
+            {user?.name
+              ?.charAt(0)
+              ?.toUpperCase() ||
+              "U"}
+          </div>
+
+          {/* Logout */}
+          <button
+            onClick={
+              handleLogout
+            }
+            className="
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-red-100
+              text-red-600
+              transition
+              hover:bg-red-200
+            "
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </header>

@@ -7,17 +7,30 @@
 
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * Global Prisma reference.
+ */
 const globalForPrisma =
   globalThis as unknown as {
-    prisma: PrismaClient | undefined;
+    prisma:
+      | PrismaClient
+      | undefined;
   };
 
+/**
+ * Create Prisma instance.
+ */
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient();
 
+/**
+ * Prevent multiple clients during dev.
+ */
 if (
-  process.env.NODE_ENV !== "production"
+  process.env.NODE_ENV !==
+  "production"
 ) {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma =
+    prisma;
 }
