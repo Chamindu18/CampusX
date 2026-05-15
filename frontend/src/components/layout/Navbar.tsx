@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { NotificationBell } from "@/components/ui/NotificationBell";
 
 export function Navbar() {
   return (
@@ -71,6 +72,9 @@ export function Navbar() {
                 Get Started
               </Button>
             </Link>
+
+            {/* Notifications */}
+            <NotificationBell />
           </div>
         </div>
       </Container>
