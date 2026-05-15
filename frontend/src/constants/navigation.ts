@@ -9,6 +9,7 @@ import {
   MessageSquare,
   User,
   Settings,
+  Heart,
 } from "lucide-react";
 
 export const navigationItems = [
@@ -47,4 +48,10 @@ export const navigationItems = [
     href: "/settings",
     icon: Settings,
   },
+
+  {
+  title: "Saved",
+  href: "/saved",
+  icon: Heart,
+},
 ];
