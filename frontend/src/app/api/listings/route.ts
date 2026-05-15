@@ -2,10 +2,10 @@
  * Marketplace listings API.
  *
  * Features:
- * - fetch all listings
- * - create new listings
- * - authenticated ownership
- * - image upload persistence
+ * - search
+ * - category filtering
+ * - pagination
+ * - optimized querying
  */
 
 import { NextResponse } from "next/server";
@@ -14,22 +14,107 @@ import { prisma } from "@/lib/prisma";
 
 import { getCurrentUser } from "@/lib/current-user";
 
-/**
- * GET all marketplace listings.
- */
-export async function GET() {
+/* ===================================================== */
+/* GET LISTINGS */
+/* ===================================================== */
+
+export async function GET(
+  request: Request
+) {
   try {
     /**
-     * Fetch listings ordered newest first.
+     * URL params.
      */
+    const {
+      searchParams,
+    } = new URL(request.url);
+
+    /**
+     * Search query.
+     */
+    const search =
+      searchParams.get(
+        "search"
+      ) || "";
+
+    /**
+     * Category filter.
+     */
+    const category =
+      searchParams.get(
+        "category"
+      ) || "";
+
+    /**
+     * Pagination.
+     */
+    const page = Number(
+      searchParams.get("page") ||
+        "1"
+    );
+
+    const limit = 9;
+
+    const skip =
+      (page - 1) * limit;
+
+    /* ============================== */
+    /* BUILD FILTERS */
+    /* ============================== */
+
+    const where: any = {};
+
+    /**
+     * Search filtering.
+     */
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains:
+              search,
+
+            mode:
+              "insensitive",
+          },
+        },
+
+        {
+          description: {
+            contains:
+              search,
+
+            mode:
+              "insensitive",
+          },
+        },
+      ];
+    }
+
+    /**
+     * Category filtering.
+     */
+    if (
+      category &&
+      category !== "All"
+    ) {
+      where.category =
+        category;
+    }
+
+    /* ============================== */
+    /* FETCH LISTINGS */
+    /* ============================== */
+
     const listings =
       await prisma.listing.findMany({
+        where,
+
         include: {
           user: {
             select: {
               id: true,
               name: true,
-              email: true,
             },
           },
         },
@@ -37,11 +122,35 @@ export async function GET() {
         orderBy: {
           createdAt: "desc",
         },
+
+        skip,
+
+        take: limit,
       });
 
-    return NextResponse.json(
-      listings
-    );
+    /**
+     * Total count.
+     */
+    const totalListings =
+      await prisma.listing.count({
+        where,
+      });
+
+    const totalPages =
+      Math.ceil(
+        totalListings / limit
+      );
+
+    return NextResponse.json({
+      listings,
+
+      pagination: {
+        page,
+        limit,
+        totalListings,
+        totalPages,
+      },
+    });
   } catch (error) {
     console.error(
       "GET_LISTINGS_ERROR",
@@ -60,9 +169,10 @@ export async function GET() {
   }
 }
 
-/**
- * CREATE new marketplace listing.
- */
+/* ===================================================== */
+/* CREATE LISTING */
+/* ===================================================== */
+
 export async function POST(
   request: Request
 ) {
@@ -73,9 +183,6 @@ export async function POST(
     const currentUser =
       await getCurrentUser();
 
-    /**
-     * Block unauthenticated users.
-     */
     if (!currentUser) {
       return NextResponse.json(
         {
@@ -89,7 +196,7 @@ export async function POST(
     }
 
     /**
-     * Parse request body.
+     * Parse body.
      */
     const body =
       await request.json();
@@ -103,7 +210,7 @@ export async function POST(
     } = body;
 
     /**
-     * Basic backend validation.
+     * Validation.
      */
     if (
       !title ||
@@ -123,7 +230,7 @@ export async function POST(
     }
 
     /**
-     * Create database listing.
+     * Create listing.
      */
     const listing =
       await prisma.listing.create({
@@ -134,46 +241,21 @@ export async function POST(
 
           category,
 
-          /**
-           * Convert string price safely.
-           */
           price:
             Number(price),
 
-          /**
-           * Cloud uploaded image URLs.
-           */
           imageUrls:
             imageUrls || [],
 
-          /**
-           * Temporary default condition.
-           */
           condition:
             "Used - Good",
 
-          /**
-           * Use user's university if available.
-           */
           location:
             currentUser.university ||
             "Campus Community",
 
-          /**
-           * Ownership relation.
-           */
           userId:
             currentUser.id,
-        },
-
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
         },
       });
 

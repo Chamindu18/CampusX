@@ -1,14 +1,11 @@
 /**
- * Fetch marketplace listings.
+ * Marketplace listings hook.
  */
 
 "use client";
 
 import useSWR from "swr";
 
-/**
- * Fetch helper.
- */
 const fetcher = async (
   url: string
 ) => {
@@ -24,25 +21,55 @@ const fetcher = async (
   return response.json();
 };
 
-/**
- * Listings hook.
- */
-export function useListings() {
+interface UseListingsProps {
+  search?: string;
+
+  category?: string;
+
+  page?: number;
+}
+
+export function useListings({
+  search = "",
+  category = "",
+  page = 1,
+}: UseListingsProps) {
+  /**
+   * Query params.
+   */
+  const params =
+    new URLSearchParams({
+      search,
+
+      category,
+
+      page: String(page),
+    });
+
+  /**
+   * Fetch listings.
+   */
   const {
     data,
     error,
     isLoading,
     mutate,
   } = useSWR(
-    "/api/listings",
+    `/api/listings?${params.toString()}`,
     fetcher
   );
 
   return {
     listings:
-      data || [],
+      data?.listings || [],
+
+    pagination:
+      data?.pagination,
+
     error,
+
     isLoading,
+
     mutate,
   };
 }

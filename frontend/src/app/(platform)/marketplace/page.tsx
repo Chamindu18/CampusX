@@ -1,32 +1,22 @@
 "use client";
 
 /**
- * Marketplace browsing page.
- *
- * Features:
- * - searchable listings
- * - interactive category filters
- * - animated listing grid
- * - marketplace quick actions
- * - responsive layout
+ * Advanced marketplace page.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import Link from "next/link";
-
-import { motion } from "framer-motion";
-
-import { Plus, Search } from "lucide-react";
-
-import { mockListings } from "@/constants/mock-listings";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 
 import { MarketplaceCard } from "@/components/ui/MarketplaceCard";
 
-/**
- * Marketplace categories.
- */
-const filters = [
+import { useListings } from "@/hooks/use-listings";
+
+const categories = [
   "All",
   "Books",
   "Electronics",
@@ -37,282 +27,293 @@ const filters = [
 
 export default function MarketplacePage() {
   /**
-   * Search query state.
+   * Search state.
    */
-  const [searchQuery, setSearchQuery] =
+  const [search, setSearch] =
     useState("");
 
   /**
-   * Active category filter.
+   * Category state.
    */
-  const [activeFilter, setActiveFilter] =
-    useState("All");
+  const [
+    category,
+    setCategory,
+  ] = useState("All");
 
   /**
-   * Filter listings dynamically.
+   * Pagination state.
    */
-  const filteredListings = useMemo(() => {
-    return mockListings.filter((listing) => {
-      /**
-       * Search matching.
-       */
-      const matchesSearch =
-        listing.title
-          .toLowerCase()
-          .includes(
-            searchQuery.toLowerCase()
-          ) ||
-        listing.category
-          .toLowerCase()
-          .includes(
-            searchQuery.toLowerCase()
-          );
+  const [page, setPage] =
+    useState(1);
 
-      /**
-       * Category matching.
-       */
-      const matchesCategory =
-        activeFilter === "All"
-          ? true
-          : listing.category === activeFilter;
-
-      return (
-        matchesSearch &&
-        matchesCategory
-      );
-    });
-  }, [searchQuery, activeFilter]);
+  /**
+   * Fetch marketplace data.
+   */
+  const {
+    listings,
+    pagination,
+    isLoading,
+  } = useListings({
+    search,
+    category,
+    page,
+  });
 
   return (
     <div>
       {/* ================================= */}
-      {/* PAGE HEADER */}
+      {/* HEADER */}
       {/* ================================= */}
 
-      <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-        {/* Left Content */}
-        <div>
-          <h1 className="text-5xl font-black tracking-tight text-slate-900">
-            Marketplace
-          </h1>
+      <div>
+        <h1 className="text-5xl font-black tracking-tight text-slate-900">
+          Marketplace
+        </h1>
 
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-            Browse listings from trusted student
-            communities across universities and
-            campuses.
-          </p>
-        </div>
-
-        {/* Create Listing */}
-        <Link href="/create-listing">
-          <motion.button
-            whileHover={{
-              y: -2,
-            }}
-            whileTap={{
-              scale: 0.98,
-            }}
-            className="
-              inline-flex
-              items-center
-              gap-3
-              rounded-2xl
-              bg-blue-600
-              px-6
-              py-4
-              text-sm
-              font-semibold
-              text-white
-              shadow-lg
-              shadow-blue-200/50
-              transition
-              hover:bg-blue-700
-            "
-          >
-            <Plus className="h-5 w-5" />
-
-            Create Listing
-          </motion.button>
-        </Link>
+        <p className="mt-4 text-lg text-slate-600">
+          Discover listings from your
+          campus community.
+        </p>
       </div>
 
       {/* ================================= */}
       {/* SEARCH + FILTERS */}
       {/* ================================= */}
 
-      <div className="mt-12">
+      <div className="mt-10 flex flex-col gap-5">
         {/* Search */}
         <div
           className="
             flex
-            h-16
-            w-full
+            h-14
             items-center
-            gap-4
-            rounded-3xl
+            gap-3
+            rounded-2xl
             border
             border-white/40
             bg-white/70
-            px-6
-            shadow-lg
-            shadow-slate-200/30
+            px-5
             backdrop-blur-xl
           "
         >
           <Search className="h-5 w-5 text-slate-500" />
 
           <input
-            value={searchQuery}
-            onChange={(event) =>
-              setSearchQuery(
-                event.target.value
-              )
-            }
-            placeholder="Search listings, categories, and campus items..."
+            value={search}
+            onChange={(e) => {
+              setSearch(
+                e.target.value
+              );
+
+              setPage(1);
+            }}
+            placeholder="Search listings..."
             className="
               w-full
               bg-transparent
-              text-sm
-              text-slate-700
               outline-none
               placeholder:text-slate-400
             "
           />
         </div>
 
-        {/* Filters */}
-        <div className="mt-6 flex flex-wrap gap-3">
-          {filters.map((filter) => {
-            const isActive =
-              activeFilter === filter;
-
-            return (
+        {/* Categories */}
+        <div className="flex flex-wrap gap-3">
+          {categories.map(
+            (item) => (
               <button
-                key={filter}
-                onClick={() =>
-                  setActiveFilter(filter)
-                }
+                key={item}
+                onClick={() => {
+                  setCategory(
+                    item
+                  );
+
+                  setPage(1);
+                }}
                 className={`
                   rounded-2xl
                   px-5
                   py-3
                   text-sm
                   font-medium
-                  transition-all
-                  duration-200
-
+                  transition
                   ${
-                    isActive
+                    category === item
                       ? `
                         bg-blue-600
                         text-white
-                        shadow-lg
-                        shadow-blue-200/40
                       `
                       : `
                         border
                         border-white/40
                         bg-white/70
                         text-slate-700
-                        backdrop-blur-xl
                         hover:bg-white
                       `
                   }
                 `}
               >
-                {filter}
+                {item}
               </button>
-            );
-          })}
+            )
+          )}
         </div>
       </div>
 
       {/* ================================= */}
-      {/* RESULTS */}
+      {/* LOADING */}
       {/* ================================= */}
 
-      <div className="mt-10 flex items-center justify-between">
-        <p className="text-sm text-slate-500">
-          Showing{" "}
-          <span className="font-semibold text-slate-700">
-            {filteredListings.length}
-          </span>{" "}
-          listings
-        </p>
-      </div>
-
-      {/* ================================= */}
-      {/* LISTINGS GRID */}
-      {/* ================================= */}
-
-      <div className="mt-10 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-        {filteredListings.map(
-          (listing, index) => (
-            <motion.div
-              key={listing.id}
-              initial={{
-                opacity: 0,
-                y: 30,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.45,
-                delay: index * 0.05,
-              }}
-            >
-              <MarketplaceCard
-                id={listing.id}
-                title={listing.title}
-                category={listing.category}
-                price={listing.price}
-                condition={
-                  listing.condition
-                }
-                location={listing.location}
-              />
-            </motion.div>
-          )
-        )}
-      </div>
+      {isLoading && (
+        <div className="flex h-[40vh] items-center justify-center">
+          <p className="text-slate-500">
+            Loading listings...
+          </p>
+        </div>
+      )}
 
       {/* ================================= */}
       {/* EMPTY STATE */}
       {/* ================================= */}
 
-      {filteredListings.length === 0 && (
-        <motion.div
-          initial={{
-            opacity: 0,
-          }}
-          animate={{
-            opacity: 1,
-          }}
-          className="
-            mt-20
-            rounded-3xl
-            border
-            border-dashed
-            border-slate-300
-            bg-white/50
-            px-10
-            py-20
-            text-center
-            backdrop-blur-xl
-          "
-        >
-          <h2 className="text-3xl font-bold text-slate-900">
-            No listings found
-          </h2>
+      {!isLoading &&
+        listings.length === 0 && (
+          <div
+            className="
+              mt-16
+              rounded-3xl
+              border
+              border-dashed
+              border-slate-300
+              bg-white/50
+              px-10
+              py-24
+              text-center
+              backdrop-blur-xl
+            "
+          >
+            <h3 className="text-3xl font-bold text-slate-900">
+              No listings found
+            </h3>
 
-          <p className="mx-auto mt-4 max-w-md leading-7 text-slate-500">
-            Try adjusting your search or filters
-            to discover more marketplace items.
-          </p>
-        </motion.div>
-      )}
+            <p className="mt-4 text-slate-500">
+              Try changing your search or
+              filters.
+            </p>
+          </div>
+        )}
+
+      {/* ================================= */}
+      {/* GRID */}
+      {/* ================================= */}
+
+      <div className="mt-14 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+        {listings.map(
+          (listing: any) => (
+            <MarketplaceCard
+              key={listing.id}
+              id={listing.id}
+              title={listing.title}
+              category={
+                listing.category
+              }
+              price={listing.price}
+              condition={
+                listing.condition
+              }
+              location={
+                listing.location
+              }
+              imageUrls={
+                listing.imageUrls
+              }
+            />
+          )
+        )}
+      </div>
+
+      {/* ================================= */}
+      {/* PAGINATION */}
+      {/* ================================= */}
+
+      {pagination &&
+        pagination.totalPages >
+          1 && (
+          <div className="mt-16 flex items-center justify-center gap-4">
+            {/* Prev */}
+            <button
+              disabled={
+                page === 1
+              }
+              onClick={() =>
+                setPage(
+                  (prev) =>
+                    prev - 1
+                )
+              }
+              className="
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-2xl
+                bg-white/70
+                transition
+                hover:bg-white
+                disabled:opacity-40
+              "
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            {/* Page Info */}
+            <div
+              className="
+                rounded-2xl
+                bg-white/70
+                px-6
+                py-3
+                text-sm
+                font-medium
+                text-slate-700
+              "
+            >
+              Page {page} of{" "}
+              {
+                pagination.totalPages
+              }
+            </div>
+
+            {/* Next */}
+            <button
+              disabled={
+                page ===
+                pagination.totalPages
+              }
+              onClick={() =>
+                setPage(
+                  (prev) =>
+                    prev + 1
+                )
+              }
+              className="
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-2xl
+                bg-white/70
+                transition
+                hover:bg-white
+                disabled:opacity-40
+              "
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
     </div>
   );
 }
