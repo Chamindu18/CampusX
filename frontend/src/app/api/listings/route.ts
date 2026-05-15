@@ -173,6 +173,8 @@ export async function GET(
 /* CREATE LISTING */
 /* ===================================================== */
 
+import { listingSchema } from "@/lib/validations/listing";
+
 export async function POST(
   request: Request
 ) {
@@ -201,22 +203,41 @@ export async function POST(
     const body =
       await request.json();
 
+    /**
+     * Validate input with Zod schema.
+     */
+    const parsed = listingSchema.safeParse(body);
+    
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error:
+            parsed.error.issues[0]?.message ??
+            "Invalid listing data",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const {
       title,
       description,
       category,
       price,
-      imageUrls,
-    } = body;
+    } = parsed.data;
+
+    const { imageUrls = [] } = body;
 
     /**
-     * Validation.
+     * Validate imageUrls is array of strings.
      */
     if (
-      !title ||
-      !description ||
-      !category ||
-      !price
+      !Array.isArray(imageUrls) ||
+      !imageUrls.every(
+        (url) => typeof url === "string"
+      )
     ) {
       return NextResponse.json(
         {

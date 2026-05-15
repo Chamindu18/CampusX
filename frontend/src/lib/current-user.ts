@@ -4,61 +4,51 @@
 
 import { cookies } from "next/headers";
 
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 
-import { verifyToken } from "@/lib/auth";
+import {
+  AUTH_COOKIE_NAME,
+  verifyToken,
+} from "@/lib/auth";
+
+const currentUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  university: true,
+  bio: true,
+  createdAt: true,
+  role: true,
+} satisfies Prisma.UserSelect;
 
 /**
  * Get current authenticated user.
  */
 export async function getCurrentUser() {
   try {
-    /**
-     * Read auth cookie.
-     */
-    const cookieStore =
-      await cookies();
+    const cookieStore = await cookies();
 
-    const token =
-      cookieStore.get(
-        "campusx_token"
-      )?.value;
+    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
-    /**
-     * No token.
-     */
     if (!token) {
       return null;
     }
 
-    /**
-     * Verify JWT.
-     */
-    const payload =
-      verifyToken(token);
+    const payload = verifyToken(token);
 
     if (!payload) {
       return null;
     }
 
-    /**
-     * Find database user.
-     */
-    const user =
-      await prisma.user.findUnique({
-        where: {
-          id: payload.userId,
-        },
+    const user = await prisma.user.findUnique({
+      where: {
+        id: payload.userId,
+      },
 
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          university: true,
-          bio: true,
-          createdAt: true,
-        },
-      });
+      select: currentUserSelect,
+    });
 
     return user;
   } catch (error) {
@@ -67,3 +57,7 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
+export type CurrentUser = Awaited<
+  ReturnType<typeof getCurrentUser>
+>;

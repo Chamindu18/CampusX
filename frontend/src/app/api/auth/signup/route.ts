@@ -8,33 +8,43 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 
-import { createToken } from "@/lib/auth";
+import {
+  createToken,
+  setAuthCookie,
+} from "@/lib/auth";
+
+import {
+  signupSchema,
+} from "@/lib/validations/auth";
 
 export async function POST(
   request: Request
 ) {
   try {
-    /**
-     * Parse request body.
-     */
-    const body =
-      await request.json();
+    const body = await request.json();
 
-    const {
-      name,
-      email,
-      password,
-    } = body;
+    const parsed = signupSchema.safeParse(body);
 
-    /**
-     * Check existing user.
-     */
-    const existingUser =
-      await prisma.user.findUnique({
-        where: {
-          email,
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error:
+            parsed.error.issues[0]?.message ??
+            "Invalid request",
         },
-      });
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const { name, email, password } = parsed.data;
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
 
     if (existingUser) {
       return NextResponse.json(
@@ -48,62 +58,36 @@ export async function POST(
       );
     }
 
-    /**
-     * Hash password.
-     */
-    const hashedPassword =
-      await bcrypt.hash(
-        password,
-        10
-      );
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    /**
-     * Create user.
-     */
-    const user =
-      await prisma.user.create({
-        data: {
-          name,
-          email,
-          password:
-            hashedPassword,
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "USER",
+      },
 
-    /**
-     * Create token.
-     */
-    const token =
-      createToken({
-        userId: user.id,
-        email: user.email,
-      });
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
+    });
 
-    /**
-     * Response.
-     */
-    const response =
-      NextResponse.json({
-        success: true,
-      });
+    const token = createToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
-    /**
-     * Set auth cookie.
-     */
-    response.cookies.set(
-      "campusx_token",
-      token,
-      {
-        httpOnly: true,
-        secure:
-          process.env.NODE_ENV ===
-          "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge:
-          60 * 60 * 24 * 7,
-      }
-    );
+    const response = NextResponse.json({
+      success: true,
+      user,
+    });
+
+    setAuthCookie(response, token);
 
     return response;
   } catch (error) {

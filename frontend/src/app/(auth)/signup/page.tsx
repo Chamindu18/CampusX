@@ -8,6 +8,8 @@ import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 
+import { useSearchParams } from "next/navigation";
+
 import { motion } from "framer-motion";
 
 import { useForm } from "react-hook-form";
@@ -27,11 +29,17 @@ import { FormError } from "@/components/ui/FormError";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 
+import {
+  getLandingPathForRole,
+  getSafeRedirectPath,
+} from "@/lib/auth";
+
 export default function SignupPage() {
   /**
    * Next.js router.
    */
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   /**
    * React Hook Form setup.
@@ -101,12 +109,16 @@ export default function SignupPage() {
         "Account created successfully"
       );
 
-      /**
-       * Redirect to dashboard.
-       */
-      router.push(
-        "/dashboard"
+      router.replace(
+        getSafeRedirectPath(
+          searchParams.get("next"),
+          getLandingPathForRole(
+            result.user?.role
+          )
+        )
       );
+
+      router.refresh();
     } catch (error) {
       console.error(error);
 

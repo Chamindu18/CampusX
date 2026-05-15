@@ -4,6 +4,8 @@
 
 import Link from "next/link";
 
+import { prisma } from "@/lib/prisma";
+
 import { MarketplaceCard } from "@/components/ui/MarketplaceCard";
 
 interface UserPageProps {
@@ -15,19 +17,25 @@ interface UserPageProps {
 async function getUser(
   id: string
 ) {
-  const response =
-    await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/users/${id}`,
-      {
-        cache: "no-store",
-      }
-    );
+  return prisma.user.findUnique({
+    where: {
+      id,
+    },
 
-  if (!response.ok) {
-    return null;
-  }
+    select: {
+      id: true,
+      name: true,
+      university: true,
+      bio: true,
+      createdAt: true,
 
-  return response.json();
+      listings: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
 }
 
 export default async function UserPage({
@@ -115,7 +123,7 @@ export default async function UserPage({
 
         <div className="mt-10 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
           {user.listings.map(
-            (listing: any) => (
+            (listing) => (
               <MarketplaceCard
                 key={listing.id}
                 id={listing.id}

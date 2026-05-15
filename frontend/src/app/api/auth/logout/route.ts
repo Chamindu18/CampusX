@@ -4,26 +4,14 @@
 
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  /**
-   * Create response.
-   */
-  const response =
-    NextResponse.json({
-      success: true,
-    });
+import { clearAuthCookie } from "@/lib/auth";
 
-  /**
-   * Remove auth cookie.
-   */
-  response.cookies.set(
-    "campusx_token",
-    "",
-    {
-      expires: new Date(0),
-      path: "/",
-    }
-  );
+export async function POST() {
+  const response = NextResponse.json({
+    success: true,
+  });
+
+  clearAuthCookie(response);
 
   return response;
 }

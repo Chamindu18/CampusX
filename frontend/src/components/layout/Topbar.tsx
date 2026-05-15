@@ -16,8 +16,7 @@ export function Topbar() {
   /**
    * Current authenticated user.
    */
-  const { user } =
-    useCurrentUser();
+  const { user, mutate } = useCurrentUser();
 
   const router = useRouter();
 
@@ -33,11 +32,13 @@ export function Topbar() {
         }
       );
 
+      await mutate(null, false);
+
       toast.success(
         "Logged out"
       );
 
-      router.push("/login");
+      router.replace("/login");
 
       router.refresh();
     } catch {

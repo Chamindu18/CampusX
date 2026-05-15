@@ -30,6 +30,8 @@ model User {
 
   password String
 
+  role UserRole @default(USER)
+
   university String?
 
   bio String?
@@ -65,6 +67,11 @@ model User {
 
   @@index([email])
   @@index([createdAt])
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 /**
@@ -308,9 +315,11 @@ model Report {
    * ==============================
    */
   /**
+   * /**
    * /* REPORTER RELATION
    */
   /**
+   * /**
    * /* ==============================
    */
 
@@ -322,9 +331,11 @@ model Report {
    * ==============================
    */
   /**
+   * /**
    * /* LISTING RELATION
    */
   /**
+   * /**
    * /* ==============================
    */
 

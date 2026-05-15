@@ -1,59 +1,29 @@
-"use client";
-
 /**
  * Authentication layout with smooth transitions.
  */
 
 import type { ReactNode } from "react";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { redirect } from "next/navigation";
 
-import { usePathname } from "next/navigation";
+import { AuthLayoutShell } from "@/components/layout/AuthLayoutShell";
 
-import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
+import { getCurrentUser } from "@/lib/current-user";
+
+import { getLandingPathForRole } from "@/lib/auth";
 
 interface AuthLayoutProps {
   children: ReactNode;
 }
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: AuthLayoutProps) {
-  const pathname = usePathname();
+  const currentUser = await getCurrentUser();
 
-  return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-6 py-20">
-      {/* Animated Background */}
-      <AnimatedBackground />
+  if (currentUser) {
+    redirect(getLandingPathForRole(currentUser.role));
+  }
 
-      {/* Animated Route Transitions */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={pathname}
-          initial={{
-            opacity: 0,
-            y: 40,
-            scale: 0.96,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1,
-          }}
-          exit={{
-            opacity: 0,
-            y: -20,
-            scale: 0.98,
-          }}
-          transition={{
-            duration: 0.45,
-            ease: "easeInOut",
-          }}
-          className="relative z-10 w-full max-w-md"
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </main>
-  );
+  return <AuthLayoutShell>{children}</AuthLayoutShell>;
 }

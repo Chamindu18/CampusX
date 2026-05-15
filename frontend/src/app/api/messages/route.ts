@@ -102,6 +102,24 @@ export async function POST(
     } = body;
 
     /**
+     * Ensure conversation exists (create if missing).
+     * This prevents FK violations when clients send
+     * a conversationId that hasn't been created yet.
+     */
+    const existingConversation =
+      await prisma.conversation.findUnique({
+        where: { id: conversationId },
+      });
+
+    if (!existingConversation) {
+      await prisma.conversation.create({
+        data: {
+          id: conversationId,
+        },
+      });
+    }
+
+    /**
      * Save database message.
      */
     const message =

@@ -6,6 +6,8 @@
 
 import useSWR from "swr";
 
+import type { CurrentUser } from "@/lib/current-user";
+
 /**
  * Fetch helper.
  */
@@ -13,7 +15,14 @@ const fetcher = async (
   url: string
 ) => {
   const response =
-    await fetch(url);
+    await fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+
+  if (response.status === 401) {
+    return null;
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -33,13 +42,13 @@ export function useCurrentUser() {
     error,
     isLoading,
     mutate,
-  } = useSWR(
+  } = useSWR<CurrentUser | null>(
     "/api/current-user",
     fetcher
   );
 
   return {
-    user: data,
+    user: data ?? null,
     error,
     isLoading,
     mutate,

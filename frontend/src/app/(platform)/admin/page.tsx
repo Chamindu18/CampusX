@@ -2,19 +2,64 @@
  * Admin moderation dashboard.
  */
 
-async function getReports() {
-  const response =
-    await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/reports`,
-      {
-        cache: "no-store",
-      }
-    );
+import { redirect } from "next/navigation";
 
-  return response.json();
+import { prisma } from "@/lib/prisma";
+
+import { getCurrentUser } from "@/lib/current-user";
+
+/**
+ * Fetch reports.
+ */
+async function getReports() {
+  try {
+    return prisma.report.findMany({
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+
+        listing: true,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return [];
+  }
 }
 
 export default async function AdminPage() {
+  /**
+   * Current user.
+   */
+  const currentUser =
+    await getCurrentUser();
+
+  /**
+   * Unauthorized access.
+   */
+  if (
+    !currentUser
+  ) {
+    redirect("/login");
+  }
+
+  if (
+    currentUser.role !==
+      "ADMIN"
+  ) {
+    redirect("/dashboard");
+  }
+
   /**
    * Fetch reports.
    */
@@ -23,22 +68,132 @@ export default async function AdminPage() {
 
   return (
     <div>
+      {/* ================================= */}
       {/* HEADER */}
+      {/* ================================= */}
+
       <div>
         <h1 className="text-5xl font-black tracking-tight text-slate-900">
           Admin Dashboard
         </h1>
 
         <p className="mt-4 text-lg text-slate-600">
-          Platform moderation and safety
-          management.
+          Platform moderation and
+          safety management.
         </p>
       </div>
 
+      {/* ================================= */}
+      {/* STATS */}
+      {/* ================================= */}
+
+      <div className="mt-12 grid gap-6 md:grid-cols-3">
+        {/* Total Reports */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/40
+            bg-white/70
+            p-8
+            backdrop-blur-xl
+          "
+        >
+          <p className="text-sm text-slate-500">
+            Total Reports
+          </p>
+
+          <h2 className="mt-4 text-5xl font-black text-slate-900">
+            {reports.length}
+          </h2>
+        </div>
+
+        {/* Pending */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/40
+            bg-white/70
+            p-8
+            backdrop-blur-xl
+          "
+        >
+          <p className="text-sm text-slate-500">
+            Pending Reports
+          </p>
+
+          <h2 className="mt-4 text-5xl font-black text-yellow-600">
+            {
+              reports.filter(
+                (report) =>
+                  report.status ===
+                  "PENDING"
+              ).length
+            }
+          </h2>
+        </div>
+
+        {/* Resolved */}
+        <div
+          className="
+            rounded-3xl
+            border
+            border-white/40
+            bg-white/70
+            p-8
+            backdrop-blur-xl
+          "
+        >
+          <p className="text-sm text-slate-500">
+            Resolved Reports
+          </p>
+
+          <h2 className="mt-4 text-5xl font-black text-green-600">
+            {
+              reports.filter(
+                (report) =>
+                  report.status ===
+                  "RESOLVED"
+              ).length
+            }
+          </h2>
+        </div>
+      </div>
+
+      {/* ================================= */}
       {/* REPORTS */}
-      <div className="mt-12 space-y-6">
+      {/* ================================= */}
+
+      <div className="mt-14 space-y-6">
+        {reports.length ===
+          0 && (
+          <div
+            className="
+              rounded-3xl
+              border
+              border-dashed
+              border-slate-300
+              bg-white/50
+              px-10
+              py-24
+              text-center
+              backdrop-blur-xl
+            "
+          >
+            <h3 className="text-3xl font-bold text-slate-900">
+              No reports found
+            </h3>
+
+            <p className="mt-4 text-slate-500">
+              Platform moderation queue
+              is currently empty.
+            </p>
+          </div>
+        )}
+
         {reports.map(
-          (report: any) => (
+          (report) => (
             <div
               key={report.id}
               className="
@@ -50,9 +205,13 @@ export default async function AdminPage() {
                 backdrop-blur-xl
               "
             >
-              {/* Top */}
-              <div className="flex items-start justify-between gap-6">
+              {/* ================================= */}
+              {/* TOP */}
+              {/* ================================= */}
+
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div>
+                  {/* Reason */}
                   <div
                     className="
                       inline-flex
@@ -65,45 +224,58 @@ export default async function AdminPage() {
                       text-red-700
                     "
                   >
-                    {
-                      report.reason
-                    }
+                    {report.reason}
                   </div>
 
+                  {/* Title */}
                   <h2 className="mt-5 text-2xl font-bold text-slate-900">
                     {
                       report.listing
-                        .title
+                        ?.title
                     }
                   </h2>
 
+                  {/* Reporter */}
                   <p className="mt-3 text-slate-500">
                     Reported by{" "}
                     {
                       report.reporter
-                        .name
+                        ?.name
                     }
                   </p>
                 </div>
 
+                {/* Status */}
                 <div
-                  className="
+                  className={`
+                    inline-flex
                     rounded-full
-                    bg-yellow-100
                     px-4
                     py-2
                     text-sm
                     font-semibold
-                    text-yellow-700
-                  "
+                    ${
+                      report.status ===
+                      "PENDING"
+                        ? `
+                          bg-yellow-100
+                          text-yellow-700
+                        `
+                        : `
+                          bg-green-100
+                          text-green-700
+                        `
+                    }
+                  `}
                 >
-                  {
-                    report.status
-                  }
+                  {report.status}
                 </div>
               </div>
 
-              {/* Description */}
+              {/* ================================= */}
+              {/* DESCRIPTION */}
+              {/* ================================= */}
+
               {report.description && (
                 <div className="mt-8">
                   <p className="leading-7 text-slate-600">
@@ -114,7 +286,10 @@ export default async function AdminPage() {
                 </div>
               )}
 
-              {/* Listing */}
+              {/* ================================= */}
+              {/* LISTING DESCRIPTION */}
+              {/* ================================= */}
+
               <div
                 className="
                   mt-8
@@ -130,7 +305,7 @@ export default async function AdminPage() {
                 <p className="mt-3 leading-7 text-slate-700">
                   {
                     report.listing
-                      .description
+                      ?.description
                   }
                 </p>
               </div>

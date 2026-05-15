@@ -3,11 +3,21 @@
 const nextConfig = {
   images: {
     remotePatterns: [
+      // UploadThing CDN
       {
         protocol: "https",
-
-        hostname: "**",
+        hostname: "utfs.io",
       },
+      // Vercel image optimization (if using Vercel)
+      {
+        protocol: "https",
+        hostname: "*.vercel.com",
+      },
+      // Add other trusted image hosts as needed
+      // {
+      //   protocol: "https",
+      //   hostname: "images.example.com",
+      // },
     ],
   },
 };

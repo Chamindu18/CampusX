@@ -74,6 +74,25 @@ export async function GET() {
 /* UPDATE PROFILE */
 /* ===================================================== */
 
+import { z } from "zod";
+
+const profileUpdateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .optional(),
+  university: z
+    .string()
+    .trim()
+    .optional(),
+  bio: z
+    .string()
+    .trim()
+    .max(500, "Bio must be less than 500 characters")
+    .optional(),
+});
+
 export async function PATCH(
   request: Request
 ) {
@@ -102,11 +121,29 @@ export async function PATCH(
     const body =
       await request.json();
 
+    /**
+     * Validate input with Zod schema.
+     */
+    const parsed = profileUpdateSchema.safeParse(body);
+    
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error:
+            parsed.error.issues[0]?.message ??
+            "Invalid profile data",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const {
       name,
       university,
       bio,
-    } = body;
+    } = parsed.data;
 
     /**
      * Update user profile.
@@ -119,11 +156,9 @@ export async function PATCH(
         },
 
         data: {
-          name,
-
-          university,
-
-          bio,
+          ...(name && { name }),
+          ...(university && { university }),
+          ...(bio && { bio }),
         },
       });
 
