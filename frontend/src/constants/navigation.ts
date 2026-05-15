@@ -53,5 +53,11 @@ export const navigationItems = [
   title: "Saved",
   href: "/saved",
   icon: Heart,
-},
+  },
+
+  {
+  title: "Settings",
+  href: "/settings",
+  icon: Settings,
+  },
 ];

@@ -1,22 +1,16 @@
-"use client";
-
 /**
- * Premium marketplace listing page.
+ * Marketplace listing detail page.
  */
 
-import { useState } from "react";
+import Link from "next/link";
 
 import Image from "next/image";
-
-import Link from "next/link";
 
 import {
   Heart,
   MapPin,
   ShieldCheck,
 } from "lucide-react";
-
-import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/Button";
 
@@ -26,6 +20,9 @@ interface ListingPageProps {
   }>;
 }
 
+/**
+ * Fetch listing from API.
+ */
 async function getListing(
   id: string
 ) {
@@ -37,6 +34,9 @@ async function getListing(
       }
     );
 
+  /**
+   * Missing listing.
+   */
   if (!response.ok) {
     return null;
   }
@@ -48,7 +48,7 @@ export default async function ListingPage({
   params,
 }: ListingPageProps) {
   /**
-   * Route params.
+   * Dynamic route params.
    */
   const { id } =
     await params;
@@ -60,7 +60,7 @@ export default async function ListingPage({
     await getListing(id);
 
   /**
-   * Missing listing.
+   * Listing missing.
    */
   if (!listing) {
     return (
@@ -73,85 +73,13 @@ export default async function ListingPage({
   }
 
   return (
-    <ListingDetailClient
-      listing={listing}
-    />
-  );
-}
-
-/* ===================================================== */
-/* CLIENT COMPONENT */
-/* ===================================================== */
-
-function ListingDetailClient({
-  listing,
-}: any) {
-  /**
-   * Active image state.
-   */
-  const [
-    activeImage,
-    setActiveImage,
-  ] = useState(
-    listing.imageUrls?.[0] ||
-      null
-  );
-
-  /**
-   * Save listing.
-   */
-  async function handleSave() {
-    try {
-      const response =
-        await fetch(
-          "/api/saved-listings",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              listingId:
-                listing.id,
-            }),
-          }
-        );
-
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        toast.error(
-          result.error
-        );
-
-        return;
-      }
-
-      toast.success(
-        "Listing saved"
-      );
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        "Failed to save listing"
-      );
-    }
-  }
-
-  return (
     <div className="mx-auto max-w-7xl">
       <div className="grid gap-14 lg:grid-cols-2">
         {/* ================================= */}
-        {/* IMAGE GALLERY */}
+        {/* IMAGE SECTION */}
         {/* ================================= */}
 
         <div>
-          {/* Main Image */}
           <div
             className="
               relative
@@ -166,9 +94,11 @@ function ListingDetailClient({
               backdrop-blur-xl
             "
           >
-            {activeImage ? (
+            {listing.imageUrls?.[0] ? (
               <Image
-                src={activeImage}
+                src={
+                  listing.imageUrls[0]
+                }
                 alt={listing.title}
                 fill
                 className="object-cover"
@@ -192,52 +122,6 @@ function ListingDetailClient({
               </div>
             )}
           </div>
-
-          {/* Thumbnails */}
-          {listing.imageUrls
-            ?.length > 1 && (
-            <div className="mt-5 grid grid-cols-4 gap-4">
-              {listing.imageUrls.map(
-                (
-                  image: string
-                ) => (
-                  <button
-                    key={image}
-                    onClick={() =>
-                      setActiveImage(
-                        image
-                      )
-                    }
-                    className={`
-                      relative
-                      h-28
-                      overflow-hidden
-                      rounded-2xl
-                      border-2
-                      transition
-                      ${
-                        activeImage ===
-                        image
-                          ? `
-                            border-blue-600
-                          `
-                          : `
-                            border-transparent
-                          `
-                      }
-                    `}
-                  >
-                    <Image
-                      src={image}
-                      alt="Listing image"
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
-                )
-              )}
-            </div>
-          )}
         </div>
 
         {/* ================================= */}
@@ -304,16 +188,23 @@ function ListingDetailClient({
             </p>
           </div>
 
-          {/* Seller */}
-          <div
+          {/* ================================= */}
+          {/* SELLER */}
+          {/* ================================= */}
+
+          <Link
+            href={`/users/${listing.user.id}`}
             className="
               mt-12
+              block
               rounded-3xl
               border
               border-white/40
               bg-white/70
               p-6
               backdrop-blur-xl
+              transition
+              hover:bg-white
             "
           >
             <p className="text-sm text-slate-500">
@@ -321,19 +212,18 @@ function ListingDetailClient({
             </p>
 
             <h3 className="mt-2 text-xl font-bold text-slate-900">
-              {
-                listing.user.name
-              }
+              {listing.user.name}
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              {
-                listing.user.email
-              }
+              {listing.user.email}
             </p>
-          </div>
+          </Link>
 
-          {/* Actions */}
+          {/* ================================= */}
+          {/* ACTIONS */}
+          {/* ================================= */}
+
           <div className="mt-12 flex flex-col gap-4 sm:flex-row">
             <Link href="/messages">
               <Button size="lg">
@@ -344,9 +234,6 @@ function ListingDetailClient({
             <Button
               size="lg"
               variant="outline"
-              onClick={
-                handleSave
-              }
             >
               <Heart className="mr-2 h-5 w-5" />
 
