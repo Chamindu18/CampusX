@@ -1,226 +1,349 @@
 "use client";
 
 /**
- * Marketplace listing card.
- *
- * Features:
- * - dynamic listing routing
- * - cloud image support
- * - hover animations
- * - responsive design
- * - fallback image states
+ * Create marketplace listing page.
  */
 
-import Link from "next/link";
-
-import Image from "next/image";
+import { useState } from "react";
 
 import { motion } from "framer-motion";
 
-import { MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { useForm } from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import toast from "react-hot-toast";
+
+import {
+  listingSchema,
+  type ListingFormValues,
+} from "@/lib/validations/listing";
+
+import { Button } from "@/components/ui/Button";
 
 import { Card } from "@/components/ui/Card";
 
-interface MarketplaceCardProps {
-  id: string;
+import { FormError } from "@/components/ui/FormError";
 
-  title: string;
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
-  category: string;
+import { Input } from "@/components/ui/Input";
 
-  price: number;
+import { Label } from "@/components/ui/Label";
 
-  condition: string;
-
-  location: string;
-
-  imageUrls?: string[];
-}
-
-export function MarketplaceCard({
-  id,
-  title,
-  category,
-  price,
-  condition,
-  location,
-  imageUrls = [],
-}: MarketplaceCardProps) {
+export default function CreateListingPage() {
   /**
-   * Primary listing image.
+   * Next.js router.
    */
-  const image =
-    imageUrls?.[0];
+  const router = useRouter();
+
+  /**
+   * Uploaded images.
+   */
+  const [
+    imageUrls,
+    setImageUrls,
+  ] = useState<string[]>([]);
+
+  /**
+   * React Hook Form.
+   */
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: {
+      errors,
+      isSubmitting,
+    },
+  } = useForm<ListingFormValues>({
+    resolver: zodResolver(
+      listingSchema
+    ),
+  });
+
+  /**
+   * Submit listing.
+   */
+  async function onSubmit(
+    data: ListingFormValues
+  ) {
+    try {
+      /**
+       * API request.
+       */
+      const response =
+        await fetch(
+          "/api/listings",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              ...data,
+
+              imageUrls,
+            }),
+          }
+        );
+
+      const result =
+        await response.json();
+
+      /**
+       * Backend errors.
+       */
+      if (!response.ok) {
+        toast.error(
+          result.error ||
+            "Failed to create listing"
+        );
+
+        return;
+      }
+
+      /**
+       * Success.
+       */
+      toast.success(
+        "Listing published"
+      );
+
+      /**
+       * Reset form.
+       */
+      reset();
+
+      /**
+       * Redirect.
+       */
+      router.push(
+        "/marketplace"
+      );
+
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+    }
+  }
 
   return (
     <motion.div
-      whileHover={{
-        y: -8,
+      initial={{
+        opacity: 0,
+        y: 20,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
       }}
       transition={{
-        duration: 0.25,
+        duration: 0.5,
       }}
+      className="mx-auto max-w-4xl"
     >
-      <Link
-        href={`/marketplace/${id}`}
+      {/* HEADER */}
+      <div>
+        <h1 className="text-5xl font-black tracking-tight text-slate-900">
+          Create Listing
+        </h1>
+
+        <p className="mt-4 text-lg text-slate-600">
+          Publish an item to the
+          campus marketplace.
+        </p>
+      </div>
+
+      {/* FORM */}
+      <Card
+        className="
+          mt-12
+          border-white/40
+          bg-white/70
+          p-10
+          backdrop-blur-xl
+        "
       >
-        <Card
-          className="
-            group
-            overflow-hidden
-            border-white/40
-            bg-white/70
-            shadow-lg
-            shadow-slate-200/30
-            backdrop-blur-xl
-            transition-all
-            duration-300
-            hover:shadow-2xl
-          "
+        <form
+          onSubmit={handleSubmit(
+            onSubmit
+          )}
+          className="space-y-8"
         >
-          {/* ========================= */}
-          {/* IMAGE */}
-          {/* ========================= */}
+          {/* TITLE */}
+          <div>
+            <Label htmlFor="title">
+              Listing Title
+            </Label>
 
-          <div
-            className="
-              relative
-              h-56
-              overflow-hidden
-              bg-slate-100
-            "
-          >
-            {image ? (
-              <Image
-                src={image}
-                alt={title}
-                fill
-                className="
-                  object-cover
-                  transition-transform
-                  duration-500
-                  group-hover:scale-105
-                "
-              />
-            ) : (
-              <div
-                className="
-                  flex
-                  h-full
-                  items-center
-                  justify-center
-                  bg-gradient-to-br
-                  from-blue-100
-                  via-indigo-100
-                  to-cyan-100
-                "
-              >
-                <span
-                  className="
-                    text-sm
-                    font-medium
-                    text-slate-500
-                  "
-                >
-                  No Image
-                </span>
-              </div>
-            )}
+            <Input
+              id="title"
+              placeholder="MacBook Air M1"
+              className="mt-2"
+              {...register("title")}
+            />
 
-            {/* Overlay */}
-            <div
-              className="
-                absolute
-                inset-0
-                bg-black/0
-                transition
-                duration-300
-                group-hover:bg-black/5
-              "
+            <FormError
+              message={
+                errors.title?.message
+              }
             />
           </div>
 
-          {/* ========================= */}
-          {/* CONTENT */}
-          {/* ========================= */}
+          {/* CATEGORY */}
+          <div>
+            <Label htmlFor="category">
+              Category
+            </Label>
 
-          <div className="p-6">
-            {/* Category */}
-            <div
+            <select
+              id="category"
               className="
-                inline-flex
-                rounded-full
-                bg-blue-100
-                px-3
-                py-1
-                text-xs
-                font-semibold
-                text-blue-700
+                mt-2
+                h-12
+                w-full
+                rounded-xl
+                border
+                border-slate-200
+                bg-white/80
+                px-4
+                text-sm
+                outline-none
               "
+              {...register(
+                "category"
+              )}
             >
-              {category}
-            </div>
+              <option value="">
+                Select category
+              </option>
 
-            {/* Title */}
-            <h3
+              <option value="Electronics">
+                Electronics
+              </option>
+
+              <option value="Books">
+                Books
+              </option>
+
+              <option value="Gaming">
+                Gaming
+              </option>
+
+              <option value="Furniture">
+                Furniture
+              </option>
+
+              <option value="Accessories">
+                Accessories
+              </option>
+            </select>
+
+            <FormError
+              message={
+                errors.category
+                  ?.message
+              }
+            />
+          </div>
+
+          {/* PRICE */}
+          <div>
+            <Label htmlFor="price">
+              Price (LKR)
+            </Label>
+
+            <Input
+              id="price"
+              placeholder="50000"
+              className="mt-2"
+              {...register("price")}
+            />
+
+            <FormError
+              message={
+                errors.price?.message
+              }
+            />
+          </div>
+
+          {/* DESCRIPTION */}
+          <div>
+            <Label htmlFor="description">
+              Description
+            </Label>
+
+            <textarea
+              id="description"
+              rows={6}
+              placeholder="Describe your item..."
               className="
-                mt-5
-                line-clamp-1
-                text-2xl
-                font-bold
-                text-slate-900
+                mt-2
+                w-full
+                rounded-2xl
+                border
+                border-slate-200
+                bg-white/80
+                px-4
+                py-4
+                text-sm
+                outline-none
               "
-            >
-              {title}
-            </h3>
+              {...register(
+                "description"
+              )}
+            />
 
-            {/* Meta */}
-            <div className="mt-5 space-y-3 text-sm text-slate-500">
-              <p>{condition}</p>
+            <FormError
+              message={
+                errors.description
+                  ?.message
+              }
+            />
+          </div>
 
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+          {/* IMAGES */}
+          <div>
+            <Label>
+              Listing Images
+            </Label>
 
-                <span className="line-clamp-1">
-                  {location}
-                </span>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 flex items-center justify-between">
-              {/* Price */}
-              <span
-                className="
-                  text-2xl
-                  font-black
-                  text-slate-900
-                "
-              >
-                LKR{" "}
-                {price.toLocaleString()}
-              </span>
-
-              {/* CTA */}
-              <span
-                className="
-                  rounded-xl
-                  bg-blue-600
-                  px-4
-                  py-2
-                  text-sm
-                  font-medium
-                  text-white
-                  transition
-                  group-hover:bg-blue-700
-                "
-              >
-                View
-              </span>
+            <div className="mt-4">
+              <ImageUpload
+                value={imageUrls}
+                onChange={
+                  setImageUrls
+                }
+              />
             </div>
           </div>
-        </Card>
-      </Link>
+
+          {/* SUBMIT */}
+          <div>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={
+                isSubmitting
+              }
+            >
+              {isSubmitting
+                ? "Publishing..."
+                : "Publish Listing"}
+            </Button>
+          </div>
+        </form>
+      </Card>
     </motion.div>
   );
 }
