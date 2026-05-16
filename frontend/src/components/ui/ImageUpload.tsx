@@ -1,18 +1,10 @@
 "use client";
 
-/**
- * Listing image uploader.
- */
-
 import Image from "next/image";
 
 import {
-  UploadDropzone,
+  UploadButton,
 } from "@uploadthing/react";
-
-import type {
-  OurFileRouter,
-} from "@/app/api/uploadthing/core";
 
 interface ImageUploadProps {
   value: string[];
@@ -20,17 +12,25 @@ interface ImageUploadProps {
   onChange: (
     urls: string[]
   ) => void;
+
+  disabled?: boolean;
+
+  onUploadStart?: () => void;
+
+  onUploadComplete?: () => void;
 }
 
 export function ImageUpload({
   value,
   onChange,
+  onUploadStart,
+  onUploadComplete,
 }: ImageUploadProps) {
   return (
-    <div>
-      {/* Preview Grid */}
+    <div className="space-y-6">
+      {/* Preview Images */}
       {value.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {value.map((url) => (
             <div
               key={url}
@@ -39,6 +39,8 @@ export function ImageUpload({
                 h-40
                 overflow-hidden
                 rounded-2xl
+                border
+                border-slate-200
               "
             >
               <Image
@@ -52,27 +54,44 @@ export function ImageUpload({
         </div>
       )}
 
-      {/* Upload Area */}
-      <UploadDropzone<OurFileRouter>
+      {/* Upload Button */}
+      <UploadButton
         endpoint="listingImageUploader"
+        onBeforeUploadBegin={(
+          files
+        ) => {
+          onUploadStart?.();
+
+          return files;
+        }}
         onClientUploadComplete={(
-          response
+          res
         ) => {
           const urls =
-            response.map(
-              (file) => file.url
+            res.map(
+              (file) =>
+                file.url
             );
 
-          onChange(urls);
+          onChange([
+            ...value,
+            ...urls,
+          ]);
+
+          onUploadComplete?.();
         }}
         onUploadError={(
-          error: Error
+          error
         ) => {
-          console.error(error);
-        }}
-        appearance={{
-          container:
-            "border-2 border-dashed border-slate-300 rounded-3xl bg-slate-50 p-10",
+          console.error(
+            error
+          );
+
+          alert(
+            error.message
+          );
+
+          onUploadComplete?.();
         }}
       />
     </div>

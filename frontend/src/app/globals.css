@@ -3,6 +3,7 @@
  *
  * Tailwind v3 setup.
  */
+@import "uploadthing/tw/v4";
 
 @tailwind base;
 @tailwind components;

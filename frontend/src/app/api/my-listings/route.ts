@@ -1,5 +1,5 @@
 /**
- * Current user's listings API.
+ * Current user listings API.
  */
 
 import { NextResponse } from "next/server";
@@ -10,15 +10,9 @@ import { getCurrentUser } from "@/lib/current-user";
 
 export async function GET() {
   try {
-    /**
-     * Authenticated user.
-     */
     const currentUser =
       await getCurrentUser();
 
-    /**
-     * Unauthorized.
-     */
     if (!currentUser) {
       return NextResponse.json(
         {
@@ -31,9 +25,6 @@ export async function GET() {
       );
     }
 
-    /**
-     * Find user listings.
-     */
     const listings =
       await prisma.listing.findMany({
         where: {
@@ -42,13 +33,14 @@ export async function GET() {
         },
 
         orderBy: {
-          createdAt: "desc",
+          createdAt:
+            "desc",
         },
       });
 
-    return NextResponse.json(
-      listings
-    );
+    return NextResponse.json({
+      listings,
+    });
   } catch (error) {
     console.error(error);
 

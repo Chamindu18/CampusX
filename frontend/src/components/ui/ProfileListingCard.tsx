@@ -4,6 +4,8 @@
  * User-owned listing card.
  */
 
+import Link from "next/link";
+
 import { motion } from "framer-motion";
 
 import {
@@ -133,7 +135,8 @@ export function ProfileListingCard({
       {/* Footer */}
       <div className="mt-8 flex items-center justify-end gap-3">
         {/* Edit */}
-        <button
+        <Link
+          href={`/marketplace/edit/${id}`}
           className="
             flex
             h-11
@@ -148,7 +151,7 @@ export function ProfileListingCard({
           "
         >
           <Edit className="h-5 w-5" />
-        </button>
+        </Link>
 
         {/* Delete */}
         <button

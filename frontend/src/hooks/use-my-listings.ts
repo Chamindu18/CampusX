@@ -39,10 +39,16 @@ export function useMyListings() {
   );
 
   return {
+    /**
+     * Correct API shape.
+     */
     listings:
-      data || [],
+      data?.listings || [],
+
     error,
+
     isLoading,
+
     mutate,
   };
 }

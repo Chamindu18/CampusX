@@ -8,6 +8,10 @@ import { prisma } from "@/lib/prisma";
 
 import { getCurrentUser } from "@/lib/current-user";
 
+import {
+  listingSchema,
+} from "@/lib/validations/listing";
+
 interface RouteParams {
   params: Promise<{
     id: string;
@@ -23,15 +27,9 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    /**
-     * Dynamic route params.
-     */
     const { id } =
       await params;
 
-    /**
-     * Find listing.
-     */
     const listing =
       await prisma.listing.findUnique({
         where: {
@@ -49,9 +47,6 @@ export async function GET(
         },
       });
 
-    /**
-     * Missing listing.
-     */
     if (!listing) {
       return NextResponse.json(
         {
@@ -86,32 +81,97 @@ export async function GET(
 /* UPDATE LISTING */
 /* ===================================================== */
 
-import { listingSchema } from "@/lib/validations/listing";
-
 export async function PATCH(
   request: Request,
   { params }: RouteParams
 ) {
   try {
-    const currentUser = await getCurrentUser();
+    /**
+     * Current user.
+     */
+    const currentUser =
+      await getCurrentUser();
 
     if (!currentUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          error:
+            "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
     }
 
-    const { id } = await params;
-    const body = await request.json();
+    /**
+     * Params.
+     */
+    const { id } =
+      await params;
 
     /**
-     * Validate input with Zod schema (partial update).
+     * Existing listing.
      */
-    const parsed = listingSchema.partial().safeParse(body);
-    
+    const existingListing =
+      await prisma.listing.findUnique(
+        {
+          where: {
+            id,
+          },
+        }
+      );
+
+    if (!existingListing) {
+      return NextResponse.json(
+        {
+          error:
+            "Listing not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /**
+     * Ownership check.
+     */
+    if (
+      existingListing.userId !==
+      currentUser.id
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    /**
+     * Parse body.
+     */
+    const body =
+      await request.json();
+
+    /**
+     * Validate input.
+     */
+    const parsed =
+      listingSchema.safeParse(
+        body
+      );
+
     if (!parsed.success) {
       return NextResponse.json(
         {
           error:
-            parsed.error.issues[0]?.message ??
+            parsed.error.issues[0]
+              ?.message ||
             "Invalid listing data",
         },
         {
@@ -120,55 +180,51 @@ export async function PATCH(
       );
     }
 
-    const listing = await prisma.listing.findUnique({ where: { id } });
-
-    if (!listing) {
-      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
-    }
-
-    if (listing.userId !== currentUser.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const {
       title,
       description,
-      price,
       category,
+      price,
+      imageUrls = [],
     } = parsed.data;
 
-    const { imageUrls } = body;
-
     /**
-     * Validate imageUrls if provided.
+     * Update listing.
      */
-    if (
-      imageUrls !== undefined &&
-      (!Array.isArray(imageUrls) ||
-        !imageUrls.every((url) => typeof url === "string"))
-    ) {
-      return NextResponse.json(
-        { error: "Invalid imageUrls format" },
-        { status: 400 }
-      );
-    }
+    const updatedListing =
+      await prisma.listing.update({
+        where: {
+          id,
+        },
 
-    const updated = await prisma.listing.update({
-      where: { id },
-      data: {
-        title: title ?? listing.title,
-        description: description ?? listing.description,
-        price: price !== undefined ? Number(price) : listing.price,
-        category: category ?? listing.category,
-        imageUrls: imageUrls ?? listing.imageUrls,
-      },
-    });
+        data: {
+          title,
 
-    return NextResponse.json(updated);
+          description,
+
+          category,
+
+          price,
+
+          imageUrls,
+        },
+      });
+
+    return NextResponse.json(
+      updatedListing
+    );
   } catch (error) {
     console.error(error);
 
-    return NextResponse.json({ error: "Failed to update listing" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "Failed to update listing",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
 
@@ -181,30 +237,95 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const currentUser = await getCurrentUser();
+    /**
+     * Current user.
+     */
+    const currentUser =
+      await getCurrentUser();
 
     if (!currentUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          error:
+            "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
     }
 
-    const { id } = await params;
+    /**
+     * Params.
+     */
+    const { id } =
+      await params;
 
-    const listing = await prisma.listing.findUnique({ where: { id } });
+    /**
+     * Existing listing.
+     */
+    const listing =
+      await prisma.listing.findUnique(
+        {
+          where: {
+            id,
+          },
+        }
+      );
 
     if (!listing) {
-      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      return NextResponse.json(
+        {
+          error:
+            "Listing not found",
+        },
+        {
+          status: 404,
+        }
+      );
     }
 
-    if (listing.userId !== currentUser.id && currentUser.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    /**
+     * Ownership validation.
+     */
+    if (
+      listing.userId !==
+      currentUser.id
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
     }
 
-    await prisma.listing.delete({ where: { id } });
+    /**
+     * Delete listing.
+     */
+    await prisma.listing.delete({
+      where: {
+        id,
+      },
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
 
-    return NextResponse.json({ error: "Failed to delete listing" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "Failed to delete listing",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
