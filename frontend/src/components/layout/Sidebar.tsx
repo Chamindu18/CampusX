@@ -2,13 +2,6 @@
 
 /**
  * Platform sidebar navigation.
- *
- * Features:
- * - active route highlighting
- * - animated hover interactions
- * - create listing navigation
- * - glassmorphism styling
- * - responsive vertical layout
  */
 
 import Link from "next/link";
@@ -18,7 +11,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Store,
-  Gavel,
   MessageSquare,
   User,
   Settings,
@@ -50,12 +42,6 @@ const navigationItems = [
   },
 
   {
-    title: "Auctions",
-    href: "/auctions",
-    icon: Gavel,
-  },
-
-  {
     title: "Messages",
     href: "/messages",
     icon: MessageSquare,
@@ -78,7 +64,8 @@ export function Sidebar() {
   /**
    * Current active pathname.
    */
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
   return (
     <aside
@@ -99,10 +86,7 @@ export function Sidebar() {
         backdrop-blur-xl
       "
     >
-      {/* ========================= */}
       {/* BRAND */}
-      {/* ========================= */}
-
       <div>
         <Link
           href="/"
@@ -121,83 +105,89 @@ export function Sidebar() {
         </p>
       </div>
 
-      {/* ========================= */}
       {/* NAVIGATION */}
-      {/* ========================= */}
-
       <nav className="mt-12 flex flex-1 flex-col gap-2">
-        {navigationItems.map((item) => {
-          /**
-           * Detect active route.
-           */
-          const isActive =
-            pathname === item.href;
+        {navigationItems.map(
+          (item) => {
+            /**
+             * Active route.
+             */
+            const isActive =
+              pathname ===
+              item.href;
 
-          /**
-           * Dynamic icon component.
-           */
-          const Icon = item.icon;
+            /**
+             * Dynamic icon.
+             */
+            const Icon =
+              item.icon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                `
-                  group
-                  flex
-                  items-center
-                  gap-4
-                  rounded-2xl
-                  px-5
-                  py-4
-                  text-sm
-                  font-medium
-                  transition-all
-                  duration-200
-                `,
-
-                isActive
-                  ? `
-                    bg-blue-600
-                    text-white
-                    shadow-lg
-                    shadow-blue-200/50
-                  `
-                  : `
-                    text-slate-600
-                    hover:bg-white/80
-                    hover:text-slate-900
-                  `
-              )}
-            >
-              {/* Icon */}
-              <Icon
+            return (
+              <Link
+                key={
+                  item.href
+                }
+                href={
+                  item.href
+                }
                 className={cn(
                   `
-                    h-5
-                    w-5
-                    transition-transform
+                    group
+                    flex
+                    items-center
+                    gap-4
+                    rounded-2xl
+                    px-5
+                    py-4
+                    text-sm
+                    font-medium
+                    transition-all
                     duration-200
-                    group-hover:scale-110
                   `,
-                  isActive
-                    ? "text-white"
-                    : "text-slate-500"
-                )}
-              />
 
-              {/* Title */}
-              <span>{item.title}</span>
-            </Link>
-          );
-        })}
+                  isActive
+                    ? `
+                      bg-blue-600
+                      text-white
+                      shadow-lg
+                      shadow-blue-200/50
+                    `
+                    : `
+                      text-slate-600
+                      hover:bg-white/80
+                      hover:text-slate-900
+                    `
+                )}
+              >
+                {/* Icon */}
+                <Icon
+                  className={cn(
+                    `
+                      h-5
+                      w-5
+                      transition-transform
+                      duration-200
+                      group-hover:scale-110
+                    `,
+                    isActive
+                      ? "text-white"
+                      : "text-slate-500"
+                  )}
+                />
+
+                {/* Title */}
+                <span>
+                  {
+                    item.title
+                  }
+                </span>
+              </Link>
+            );
+          }
+        )}
       </nav>
 
-      {/* ========================= */}
-      {/* BOTTOM USER CARD */}
-      {/* ========================= */}
-
+      {/* FOOTER */}
       <div
         className="
           rounded-3xl
@@ -206,48 +196,15 @@ export function Sidebar() {
           bg-white/60
           p-5
           shadow-lg
-          shadow-slate-200/30
+          shadow-slate-200/20
         "
       >
-        {/* Top Row */}
-        <div className="flex items-center gap-4">
-          {/* Avatar */}
-          <div
-            className="
-              flex
-              h-12
-              w-12
-              items-center
-              justify-center
-              rounded-2xl
-              bg-blue-600
-              text-sm
-              font-bold
-              text-white
-            "
-          >
-            CX
-          </div>
+        <p className="text-sm font-medium text-slate-900">
+          CampusX Platform
+        </p>
 
-          {/* User Info */}
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              CampusX User
-            </p>
-
-            <p className="text-xs text-slate-500">
-              Connected workspace
-            </p>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="my-5 h-px bg-slate-200" />
-
-        {/* Footer Text */}
-        <p className="text-xs leading-6 text-slate-500">
-          Buy, sell, and connect safely within
-          trusted campus communities.
+        <p className="mt-2 text-xs leading-6 text-slate-500">
+          Buy, sell, and connect with students on your campus.
         </p>
       </div>
     </aside>
