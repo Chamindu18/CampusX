@@ -1,54 +1,37 @@
 /**
- * Fetch authenticated user.
+ * Current authenticated user hook.
  */
 
 "use client";
 
 import useSWR from "swr";
 
-import type { CurrentUser } from "@/lib/current-user";
-
-/**
- * Fetch helper.
- */
 const fetcher = async (
   url: string
 ) => {
   const response =
-    await fetch(url, {
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-
-  if (response.status === 401) {
-    return null;
-  }
+    await fetch(url);
 
   if (!response.ok) {
-    throw new Error(
-      "Failed to fetch user"
-    );
+    return null;
   }
 
   return response.json();
 };
 
-/**
- * Current user hook.
- */
 export function useCurrentUser() {
   const {
     data,
     error,
     isLoading,
     mutate,
-  } = useSWR<CurrentUser | null>(
+  } = useSWR(
     "/api/current-user",
     fetcher
   );
 
   return {
-    user: data ?? null,
+    user: data,
     error,
     isLoading,
     mutate,
