@@ -1,5 +1,5 @@
 /**
- * Mark notification as read.
+ * Single notification API.
  */
 
 import { NextResponse } from "next/server";
@@ -8,15 +8,19 @@ import { prisma } from "@/lib/prisma";
 
 import { getCurrentUser } from "@/lib/current-user";
 
-interface RouteParams {
-  params: Promise<{
-    id: string;
-  }>;
-}
+/* ===================================================== */
+/* MARK AS READ */
+/* ===================================================== */
 
 export async function PATCH(
   request: Request,
-  { params }: RouteParams
+  {
+    params,
+  }: {
+    params: Promise<{
+      id: string;
+    }>;
+  }
 ) {
   try {
     /**
@@ -28,8 +32,7 @@ export async function PATCH(
     if (!currentUser) {
       return NextResponse.json(
         {
-          error:
-            "Unauthorized",
+          error: "Unauthorized",
         },
         {
           status: 401,
@@ -38,67 +41,29 @@ export async function PATCH(
     }
 
     /**
-     * Dynamic params.
+     * Params.
      */
-    const { id } =
+    const resolvedParams =
       await params;
 
     /**
-     * Find notification.
+     * Update notification.
      */
     const notification =
-      await prisma.notification.findUnique({
-        where: {
-          id,
-        },
-      });
+      await prisma.notification.update(
+        {
+          where: {
+            id: resolvedParams.id,
+          },
 
-    if (!notification) {
-      return NextResponse.json(
-        {
-          error:
-            "Notification not found",
-        },
-        {
-          status: 404,
+          data: {
+            isRead: true,
+          },
         }
       );
-    }
-
-    /**
-     * Ownership validation.
-     */
-    if (
-      notification.userId !==
-      currentUser.id
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Forbidden",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
-
-    /**
-     * Mark as read.
-     */
-    const updated =
-      await prisma.notification.update({
-        where: {
-          id,
-        },
-
-        data: {
-          isRead: true,
-        },
-      });
 
     return NextResponse.json(
-      updated
+      notification
     );
   } catch (error) {
     console.error(error);
