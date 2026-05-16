@@ -2,7 +2,9 @@
  * Authentication utilities.
  */
 
-import type { UserRole } from "@prisma/client";
+import type {
+  Role,
+} from "@prisma/client";
 
 import jwt from "jsonwebtoken";
 
@@ -15,7 +17,12 @@ import {
   getSafeRedirectPath,
 } from "@/lib/auth-shared";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+/* ===================================================== */
+/* ENV */
+/* ===================================================== */
+
+const JWT_SECRET =
+  process.env.JWT_SECRET;
 
 function getJwtSecret() {
   if (!JWT_SECRET) {
@@ -27,17 +34,24 @@ function getJwtSecret() {
   return JWT_SECRET;
 }
 
-/**
- * JWT payload type.
- */
-interface TokenPayload {
+/* ===================================================== */
+/* TOKEN PAYLOAD */
+/* ===================================================== */
+
+export interface TokenPayload {
   userId: string;
+
   email: string;
-  role: UserRole;
+
+  role: Role;
 }
 
+/* ===================================================== */
+/* TOKEN HELPERS */
+/* ===================================================== */
+
 /**
- * Create authentication token.
+ * Create signed JWT token.
  */
 export function createToken(
   payload: TokenPayload
@@ -53,11 +67,11 @@ export function createToken(
 }
 
 /**
- * Verify JWT token.
+ * Verify JWT token safely.
  */
 export function verifyToken(
   token: string
-) {
+): TokenPayload | null {
   try {
     return jwt.verify(
       token,
@@ -68,16 +82,30 @@ export function verifyToken(
   }
 }
 
-export const AUTH_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure:
-    process.env.NODE_ENV ===
-    "production",
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-};
+/* ===================================================== */
+/* COOKIE CONFIG */
+/* ===================================================== */
 
+export const AUTH_COOKIE_OPTIONS =
+  {
+    httpOnly: true,
+
+    secure:
+      process.env.NODE_ENV ===
+      "production",
+
+    sameSite:
+      "lax" as const,
+
+    path: "/",
+
+    maxAge:
+      AUTH_COOKIE_MAX_AGE_SECONDS,
+  };
+
+/**
+ * Set auth cookie.
+ */
 export function setAuthCookie(
   response: NextResponse,
   token: string
@@ -91,6 +119,9 @@ export function setAuthCookie(
   return response;
 }
 
+/**
+ * Clear auth cookie.
+ */
 export function clearAuthCookie(
   response: NextResponse
 ) {
@@ -99,13 +130,42 @@ export function clearAuthCookie(
     "",
     {
       ...AUTH_COOKIE_OPTIONS,
-      expires: new Date(0),
+
+      expires:
+        new Date(0),
+
       maxAge: 0,
     }
   );
 
   return response;
 }
+
+/* ===================================================== */
+/* ROLE HELPERS */
+/* ===================================================== */
+
+/**
+ * Admin role check.
+ */
+export function isAdmin(
+  role?: Role
+) {
+  return role === "ADMIN";
+}
+
+/**
+ * Authenticated role check.
+ */
+export function isUser(
+  role?: Role
+) {
+  return role === "USER";
+}
+
+/* ===================================================== */
+/* EXPORTS */
+/* ===================================================== */
 
 export {
   AUTH_COOKIE_NAME,

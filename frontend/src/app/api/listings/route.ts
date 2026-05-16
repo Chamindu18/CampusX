@@ -5,6 +5,7 @@
  * - search
  * - category filtering
  * - pagination
+ * - validated creation
  * - optimized querying
  */
 
@@ -13,6 +14,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 import { getCurrentUser } from "@/lib/current-user";
+
+import {
+  listingSchema,
+} from "@/lib/validations/listing";
 
 /* ===================================================== */
 /* GET LISTINGS */
@@ -33,34 +38,42 @@ export async function GET(
      * Search query.
      */
     const search =
-      searchParams.get(
-        "search"
-      ) || "";
+      searchParams
+        .get("search")
+        ?.trim() || "";
 
     /**
      * Category filter.
      */
     const category =
-      searchParams.get(
-        "category"
-      ) || "";
+      searchParams
+        .get("category")
+        ?.trim() || "";
 
     /**
      * Pagination.
      */
-    const page = Number(
-      searchParams.get("page") ||
-        "1"
-    );
+    const pageParam =
+      Number(
+        searchParams.get(
+          "page"
+        ) || "1"
+      );
+
+    const page =
+      Number.isNaN(pageParam) ||
+      pageParam < 1
+        ? 1
+        : pageParam;
 
     const limit = 9;
 
     const skip =
       (page - 1) * limit;
 
-    /* ============================== */
+    /* ===================================================== */
     /* BUILD FILTERS */
-    /* ============================== */
+    /* ===================================================== */
 
     const where: any = {};
 
@@ -102,9 +115,9 @@ export async function GET(
         category;
     }
 
-    /* ============================== */
+    /* ===================================================== */
     /* FETCH LISTINGS */
-    /* ============================== */
+    /* ===================================================== */
 
     const listings =
       await prisma.listing.findMany({
@@ -115,6 +128,7 @@ export async function GET(
             select: {
               id: true,
               name: true,
+              email: true,
             },
           },
         },
@@ -173,8 +187,6 @@ export async function GET(
 /* CREATE LISTING */
 /* ===================================================== */
 
-import { listingSchema } from "@/lib/validations/listing";
-
 export async function POST(
   request: Request
 ) {
@@ -198,21 +210,25 @@ export async function POST(
     }
 
     /**
-     * Parse body.
+     * Parse request body.
      */
     const body =
       await request.json();
 
     /**
-     * Validate input with Zod schema.
+     * Validate with Zod.
      */
-    const parsed = listingSchema.safeParse(body);
-    
+    const parsed =
+      listingSchema.safeParse(
+        body
+      );
+
     if (!parsed.success) {
       return NextResponse.json(
         {
           error:
-            parsed.error.issues[0]?.message ??
+            parsed.error.issues[0]
+              ?.message ||
             "Invalid listing data",
         },
         {
@@ -226,29 +242,8 @@ export async function POST(
       description,
       category,
       price,
+      imageUrls = [],
     } = parsed.data;
-
-    const { imageUrls = [] } = body;
-
-    /**
-     * Validate imageUrls is array of strings.
-     */
-    if (
-      !Array.isArray(imageUrls) ||
-      !imageUrls.every(
-        (url) => typeof url === "string"
-      )
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing required fields",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
 
     /**
      * Create listing.
@@ -262,11 +257,9 @@ export async function POST(
 
           category,
 
-          price:
-            Number(price),
+          price,
 
-          imageUrls:
-            imageUrls || [],
+          imageUrls,
 
           condition:
             "Used - Good",
@@ -277,6 +270,16 @@ export async function POST(
 
           userId:
             currentUser.id,
+        },
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       });
 

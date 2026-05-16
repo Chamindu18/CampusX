@@ -1,72 +1,170 @@
 /**
  * Route protection middleware.
  *
- * Validates JWT tokens from httpOnly cookies and enforces:
- * - Protected route access (redirect to login if missing token)
- * - Admin route access (redirect to dashboard if not ADMIN role)
+ * Responsibilities:
+ * - Protect authenticated routes
+ * - Enforce admin-only access
+ * - Validate JWT tokens
+ * - Redirect invalid sessions
  */
 
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "@/lib/auth-shared";
-import { verifyEdgeToken } from "@/lib/auth-edge";
+import {
+  NextResponse,
+} from "next/server";
 
-function buildLoginRedirect(request: NextRequest) {
-  const loginUrl = new URL("/login", request.url);
+import type {
+  NextRequest,
+} from "next/server";
+
+import {
+  AUTH_COOKIE_NAME,
+} from "@/lib/auth-shared";
+
+import {
+  verifyEdgeToken,
+} from "@/lib/auth-edge";
+
+/* ===================================================== */
+/* ROUTES */
+/* ===================================================== */
+
+const protectedRoutes = [
+  "/dashboard",
+  "/marketplace",
+  "/messages",
+  "/profile",
+  "/create-listing",
+  "/saved",
+  "/settings",
+  "/notifications",
+  "/admin",
+];
+
+/* ===================================================== */
+/* HELPERS */
+/* ===================================================== */
+
+/**
+ * Protected route check.
+ */
+function isProtectedPath(
+  pathname: string
+) {
+  return protectedRoutes.some(
+    (route) =>
+      pathname === route ||
+      pathname.startsWith(
+        `${route}/`
+      )
+  );
+}
+
+/**
+ * Build login redirect.
+ */
+function buildLoginRedirect(
+  request: NextRequest
+) {
+  const loginUrl =
+    new URL(
+      "/login",
+      request.url
+    );
+
   loginUrl.searchParams.set(
     "next",
     `${request.nextUrl.pathname}${request.nextUrl.search}`
   );
-  return NextResponse.redirect(loginUrl);
+
+  return NextResponse.redirect(
+    loginUrl
+  );
 }
 
-export async function middleware(request: NextRequest) {
-  const protectedRoutes = [
-    "/dashboard",
-    "/marketplace",
-    "/messages",
-    "/profile",
-    "/create-listing",
-    "/saved",
-    "/settings",
-    "/notifications",
-    "/admin",
-  ];
+/* ===================================================== */
+/* MIDDLEWARE */
+/* ===================================================== */
 
-  const pathname = request.nextUrl.pathname;
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
+export async function middleware(
+  request: NextRequest
+) {
+  const pathname =
+    request.nextUrl.pathname;
 
-  // Allow unauthenticated access to public routes
-  if (!isProtectedRoute) {
+  /**
+   * Public route.
+   */
+  if (
+    !isProtectedPath(
+      pathname
+    )
+  ) {
     return NextResponse.next();
   }
 
-  // Check for authentication token
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  /**
+   * Auth token.
+   */
+  const token =
+    request.cookies.get(
+      AUTH_COOKIE_NAME
+    )?.value;
+
   if (!token) {
-    return buildLoginRedirect(request);
+    return buildLoginRedirect(
+      request
+    );
   }
 
-  // Verify token in Edge runtime
-  const payload = await verifyEdgeToken(token);
+  /**
+   * Verify token.
+   */
+  const payload =
+    await verifyEdgeToken(
+      token
+    );
+
+  /**
+   * Invalid/expired token.
+   */
   if (!payload) {
-    // Token is invalid or expired
-    return buildLoginRedirect(request);
+    const response =
+      buildLoginRedirect(
+        request
+      );
+
+    response.cookies.delete(
+      AUTH_COOKIE_NAME
+    );
+
+    return response;
   }
 
-  // Enforce admin-only routes
-  if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  /**
+   * Admin-only access.
+   */
+  if (
+    pathname.startsWith(
+      "/admin"
+    ) &&
+    payload.role !==
+      "ADMIN"
+  ) {
+    return NextResponse.redirect(
+      new URL(
+        "/dashboard",
+        request.url
+      )
+    );
   }
 
   return NextResponse.next();
 }
 
-/**
- * Middleware matcher.
- */
+/* ===================================================== */
+/* MATCHER */
+/* ===================================================== */
+
 export const config = {
   matcher: [
     "/dashboard/:path*",

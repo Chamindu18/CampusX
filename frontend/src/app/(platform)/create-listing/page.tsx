@@ -35,7 +35,7 @@ import { Label } from "@/components/ui/Label";
 
 export default function CreateListingPage() {
   /**
-   * Next.js router.
+   * Router.
    */
   const router = useRouter();
 
@@ -46,6 +46,14 @@ export default function CreateListingPage() {
     imageUrls,
     setImageUrls,
   ] = useState<string[]>([]);
+
+  /**
+   * Upload state.
+   */
+  const [
+    uploading,
+    setUploading,
+  ] = useState(false);
 
   /**
    * React Hook Form.
@@ -72,6 +80,19 @@ export default function CreateListingPage() {
   ) {
     try {
       /**
+       * Require image.
+       */
+      if (
+        imageUrls.length === 0
+      ) {
+        toast.error(
+          "Please upload at least one image"
+        );
+
+        return;
+      }
+
+      /**
        * API request.
        */
       const response =
@@ -97,7 +118,7 @@ export default function CreateListingPage() {
         await response.json();
 
       /**
-       * Backend errors.
+       * Backend error.
        */
       if (!response.ok) {
         toast.error(
@@ -116,9 +137,11 @@ export default function CreateListingPage() {
       );
 
       /**
-       * Reset form.
+       * Reset state.
        */
       reset();
+
+      setImageUrls([]);
 
       /**
        * Redirect.
@@ -236,16 +259,16 @@ export default function CreateListingPage() {
                 Books
               </option>
 
-              <option value="Gaming">
-                Gaming
-              </option>
-
               <option value="Furniture">
                 Furniture
               </option>
 
-              <option value="Accessories">
-                Accessories
+              <option value="Fashion">
+                Fashion
+              </option>
+
+              <option value="Other">
+                Other
               </option>
             </select>
 
@@ -260,19 +283,24 @@ export default function CreateListingPage() {
           {/* PRICE */}
           <div>
             <Label htmlFor="price">
-              Price (LKR)
+              Price
             </Label>
 
             <Input
               id="price"
-              placeholder="50000"
+              type="number"
+              step="0.01"
+              placeholder="250"
               className="mt-2"
-              {...register("price")}
+              {...register(
+                "price"
+              )}
             />
 
             <FormError
               message={
-                errors.price?.message
+                errors.price
+                  ?.message
               }
             />
           </div>
@@ -306,7 +334,8 @@ export default function CreateListingPage() {
 
             <FormError
               message={
-                errors.description
+                errors
+                  .description
                   ?.message
               }
             />
@@ -320,28 +349,54 @@ export default function CreateListingPage() {
 
             <div className="mt-4">
               <ImageUpload
-                value={imageUrls}
-                onChange={
-                  setImageUrls
+                value={
+                  imageUrls
+                }
+                disabled={
+                  uploading
+                }
+                onChange={(
+                  urls
+                ) =>
+                  setImageUrls(
+                    urls
+                  )
+                }
+                onUploadStart={() =>
+                  setUploading(
+                    true
+                  )
+                }
+                onUploadComplete={() =>
+                  setUploading(
+                    false
+                  )
                 }
               />
             </div>
+
+            <p className="mt-3 text-xs text-slate-500">
+              Max 5 images • 4MB
+              each
+            </p>
           </div>
 
           {/* SUBMIT */}
-          <div>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={
-                isSubmitting
-              }
-            >
-              {isSubmitting
-                ? "Publishing..."
-                : "Publish Listing"}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={
+              isSubmitting ||
+              uploading
+            }
+            className="w-full"
+          >
+            {uploading
+              ? "Uploading images..."
+              : isSubmitting
+              ? "Publishing..."
+              : "Publish Listing"}
+          </Button>
         </form>
       </Card>
     </motion.div>

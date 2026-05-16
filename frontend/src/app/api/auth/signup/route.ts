@@ -17,19 +17,34 @@ import {
   signupSchema,
 } from "@/lib/validations/auth";
 
+/* ===================================================== */
+/* SIGNUP */
+/* ===================================================== */
+
 export async function POST(
   request: Request
 ) {
   try {
-    const body = await request.json();
+    /**
+     * Parse request body.
+     */
+    const body =
+      await request.json();
 
-    const parsed = signupSchema.safeParse(body);
+    /**
+     * Validate request.
+     */
+    const parsed =
+      signupSchema.safeParse(
+        body
+      );
 
     if (!parsed.success) {
       return NextResponse.json(
         {
           error:
-            parsed.error.issues[0]?.message ??
+            parsed.error.issues[0]
+              ?.message ||
             "Invalid request",
         },
         {
@@ -38,19 +53,33 @@ export async function POST(
       );
     }
 
-    const { name, email, password } = parsed.data;
+    const {
+      name,
+      email,
+      password,
+    } = parsed.data;
 
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    /**
+     * Existing user check.
+     */
+    const existingUser =
+      await prisma.user.findUnique(
+        {
+          where: {
+            email,
+          },
+
+          select: {
+            id: true,
+          },
+        }
+      );
 
     if (existingUser) {
       return NextResponse.json(
         {
           error:
-            "User already exists",
+            "Account already exists",
         },
         {
           status: 400,
@@ -58,40 +87,73 @@ export async function POST(
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    /**
+     * Secure password hashing.
+     */
+    const hashedPassword =
+      await bcrypt.hash(
+        password,
+        12
+      );
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: "USER",
-      },
+    /**
+     * Create user.
+     */
+    const user =
+      await prisma.user.create({
+        data: {
+          name,
 
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-      },
-    });
+          email,
 
-    const token = createToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+          password:
+            hashedPassword,
 
-    const response = NextResponse.json({
-      success: true,
-      user,
-    });
+          role: "USER",
+        },
 
-    setAuthCookie(response, token);
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
+
+    /**
+     * Create JWT token.
+     */
+    const token =
+      createToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
+
+    /**
+     * Build response.
+     */
+    const response =
+      NextResponse.json({
+        success: true,
+
+        user,
+      });
+
+    /**
+     * Set secure auth cookie.
+     */
+    setAuthCookie(
+      response,
+      token
+    );
 
     return response;
   } catch (error) {
-    console.error(error);
+    console.error(
+      "SIGNUP_ERROR",
+      error
+    );
 
     return NextResponse.json(
       {

@@ -4,46 +4,65 @@
 
 import { z } from "zod";
 
+import {
+  passwordSchema,
+} from "./common";
+
 /**
  * Login validation schema.
  */
-export const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email is required")
-    .email("Please enter a valid email"),
+export const loginSchema =
+  z.object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email(
+        "Please enter a valid email"
+      ),
 
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
-});
+    password:
+      passwordSchema,
+  });
 
 /**
  * Signup validation schema.
  */
-export const signupSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Name must be at least 2 characters"),
+export const signupSchema =
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(
+        2,
+        "Name must be at least 2 characters"
+      )
+      .max(
+        50,
+        "Name is too long"
+      ),
 
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email is required")
-    .email("Please enter a valid email"),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email(
+        "Please enter a valid email"
+      ),
 
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
-});
+    password:
+      passwordSchema,
+  });
 
 /**
- * Type inference from schemas.
+ * Type inference.
  */
 export type LoginFormValues =
-  z.infer<typeof loginSchema>;
+  z.infer<
+    typeof loginSchema
+  >;
 
 export type SignupFormValues =
-  z.infer<typeof signupSchema>;
+  z.infer<
+    typeof signupSchema
+  >;
