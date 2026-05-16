@@ -1,77 +1,173 @@
+"use client";
+
 /**
  * Admin moderation dashboard.
  */
 
-import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { prisma } from "@/lib/prisma";
+import toast from "react-hot-toast";
 
-import { getCurrentUser } from "@/lib/current-user";
+interface Report {
+  id: string;
 
-/**
- * Fetch reports.
- */
-async function getReports() {
-  try {
-    return prisma.report.findMany({
-      include: {
-        reporter: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+  reason: string;
 
-        listing: true,
-      },
+  description?: string;
 
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } catch (error) {
-    console.error(error);
+  status: string;
 
-    return [];
-  }
+  listing: {
+    id: string;
+
+    title: string;
+
+    description: string;
+  };
+
+  reporter: {
+    name: string;
+
+    email: string;
+  };
 }
 
-export default async function AdminPage() {
+export default function AdminPage() {
   /**
-   * Current user.
+   * Reports state.
    */
-  const currentUser =
-    await getCurrentUser();
+  const [reports, setReports] =
+    useState<Report[]>([]);
 
   /**
-   * Unauthorized access.
+   * Loading state.
    */
-  if (
-    !currentUser
-  ) {
-    redirect("/login");
-  }
-
-  if (
-    currentUser.role !==
-      "ADMIN"
-  ) {
-    redirect("/dashboard");
-  }
+  const [loading, setLoading] =
+    useState(true);
 
   /**
    * Fetch reports.
    */
-  const reports =
-    await getReports();
+  async function fetchReports() {
+    try {
+      const response =
+        await fetch(
+          "/api/reports"
+        );
+
+      const data =
+        await response.json();
+
+      setReports(data);
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to fetch reports"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /**
+   * Resolve report.
+   */
+  async function resolveReport(
+    id: string
+  ) {
+    try {
+      const response =
+        await fetch(
+          `/api/reports/${id}`,
+          {
+            method: "PATCH",
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      toast.success(
+        "Report resolved"
+      );
+
+      fetchReports();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to resolve report"
+      );
+    }
+  }
+
+  /**
+   * Delete listing.
+   */
+  async function removeListing(
+    id: string
+  ) {
+    const confirmed =
+      confirm(
+        "Delete this listing?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(
+          `/api/reports/${id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      toast.success(
+        "Listing removed"
+      );
+
+      fetchReports();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to remove listing"
+      );
+    }
+  }
+
+  /**
+   * Initial fetch.
+   */
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  /**
+   * Loading UI.
+   */
+  if (loading) {
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <p className="text-slate-500">
+          Loading reports...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* ================================= */}
       {/* HEADER */}
-      {/* ================================= */}
-
       <div>
         <h1 className="text-5xl font-black tracking-tight text-slate-900">
           Admin Dashboard
@@ -83,89 +179,8 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      {/* ================================= */}
-      {/* STATS */}
-      {/* ================================= */}
-
-      <div className="mt-12 grid gap-6 md:grid-cols-3">
-        {/* Total Reports */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/40
-            bg-white/70
-            p-8
-            backdrop-blur-xl
-          "
-        >
-          <p className="text-sm text-slate-500">
-            Total Reports
-          </p>
-
-          <h2 className="mt-4 text-5xl font-black text-slate-900">
-            {reports.length}
-          </h2>
-        </div>
-
-        {/* Pending */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/40
-            bg-white/70
-            p-8
-            backdrop-blur-xl
-          "
-        >
-          <p className="text-sm text-slate-500">
-            Pending Reports
-          </p>
-
-          <h2 className="mt-4 text-5xl font-black text-yellow-600">
-            {
-              reports.filter(
-                (report) =>
-                  report.status ===
-                  "PENDING"
-              ).length
-            }
-          </h2>
-        </div>
-
-        {/* Resolved */}
-        <div
-          className="
-            rounded-3xl
-            border
-            border-white/40
-            bg-white/70
-            p-8
-            backdrop-blur-xl
-          "
-        >
-          <p className="text-sm text-slate-500">
-            Resolved Reports
-          </p>
-
-          <h2 className="mt-4 text-5xl font-black text-green-600">
-            {
-              reports.filter(
-                (report) =>
-                  report.status ===
-                  "RESOLVED"
-              ).length
-            }
-          </h2>
-        </div>
-      </div>
-
-      {/* ================================= */}
       {/* REPORTS */}
-      {/* ================================= */}
-
-      <div className="mt-14 space-y-6">
+      <div className="mt-12 space-y-6">
         {reports.length ===
           0 && (
           <div
@@ -178,17 +193,11 @@ export default async function AdminPage() {
               px-10
               py-24
               text-center
-              backdrop-blur-xl
             "
           >
             <h3 className="text-3xl font-bold text-slate-900">
               No reports found
             </h3>
-
-            <p className="mt-4 text-slate-500">
-              Platform moderation queue
-              is currently empty.
-            </p>
           </div>
         )}
 
@@ -205,13 +214,9 @@ export default async function AdminPage() {
                 backdrop-blur-xl
               "
             >
-              {/* ================================= */}
-              {/* TOP */}
-              {/* ================================= */}
-
+              {/* Top */}
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  {/* Reason */}
                   <div
                     className="
                       inline-flex
@@ -227,7 +232,6 @@ export default async function AdminPage() {
                     {report.reason}
                   </div>
 
-                  {/* Title */}
                   <h2 className="mt-5 text-2xl font-bold text-slate-900">
                     {
                       report.listing
@@ -235,7 +239,6 @@ export default async function AdminPage() {
                     }
                   </h2>
 
-                  {/* Reporter */}
                   <p className="mt-3 text-slate-500">
                     Reported by{" "}
                     {
@@ -245,37 +248,22 @@ export default async function AdminPage() {
                   </p>
                 </div>
 
-                {/* Status */}
                 <div
-                  className={`
-                    inline-flex
+                  className="
                     rounded-full
+                    bg-yellow-100
                     px-4
                     py-2
                     text-sm
                     font-semibold
-                    ${
-                      report.status ===
-                      "PENDING"
-                        ? `
-                          bg-yellow-100
-                          text-yellow-700
-                        `
-                        : `
-                          bg-green-100
-                          text-green-700
-                        `
-                    }
-                  `}
+                    text-yellow-700
+                  "
                 >
                   {report.status}
                 </div>
               </div>
 
-              {/* ================================= */}
-              {/* DESCRIPTION */}
-              {/* ================================= */}
-
+              {/* Description */}
               {report.description && (
                 <div className="mt-8">
                   <p className="leading-7 text-slate-600">
@@ -286,10 +274,7 @@ export default async function AdminPage() {
                 </div>
               )}
 
-              {/* ================================= */}
-              {/* LISTING DESCRIPTION */}
-              {/* ================================= */}
-
+              {/* Listing */}
               <div
                 className="
                   mt-8
@@ -308,6 +293,51 @@ export default async function AdminPage() {
                       ?.description
                   }
                 </p>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-8 flex flex-wrap gap-4">
+                <button
+                  onClick={() =>
+                    resolveReport(
+                      report.id
+                    )
+                  }
+                  className="
+                    rounded-2xl
+                    bg-green-600
+                    px-5
+                    py-3
+                    text-sm
+                    font-semibold
+                    text-white
+                    transition
+                    hover:bg-green-700
+                  "
+                >
+                  Resolve Report
+                </button>
+
+                <button
+                  onClick={() =>
+                    removeListing(
+                      report.id
+                    )
+                  }
+                  className="
+                    rounded-2xl
+                    bg-red-600
+                    px-5
+                    py-3
+                    text-sm
+                    font-semibold
+                    text-white
+                    transition
+                    hover:bg-red-700
+                  "
+                >
+                  Remove Listing
+                </button>
               </div>
             </div>
           )
