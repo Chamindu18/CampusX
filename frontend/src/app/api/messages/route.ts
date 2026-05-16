@@ -8,13 +8,26 @@ import { prisma } from "@/lib/prisma";
 
 import { getCurrentUser } from "@/lib/current-user";
 
-/**
- * Get messages.
- */
+/* ===================================================== */
+/* GET MESSAGES */
+/* ===================================================== */
+
 export async function GET(
   request: Request
 ) {
   try {
+    const currentUser =
+      await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json(
+        [],
+        {
+          status: 200,
+        }
+      );
+    }
+
     const {
       searchParams,
     } = new URL(request.url);
@@ -33,6 +46,36 @@ export async function GET(
       );
     }
 
+    /**
+     * Ensure access.
+     */
+    const participant =
+      await prisma.conversationParticipant.findFirst(
+        {
+          where: {
+            conversationId,
+
+            userId:
+              currentUser.id,
+          },
+        }
+      );
+
+    if (!participant) {
+      return NextResponse.json(
+        {
+          error:
+            "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    /**
+     * Fetch messages.
+     */
     const messages =
       await prisma.message.findMany({
         where: {
@@ -71,9 +114,10 @@ export async function GET(
   }
 }
 
-/**
- * Create message.
- */
+/* ===================================================== */
+/* SEND MESSAGE */
+/* ===================================================== */
+
 export async function POST(
   request: Request
 ) {
@@ -101,26 +145,50 @@ export async function POST(
       conversationId,
     } = body;
 
-    /**
-     * Ensure conversation exists (create if missing).
-     * This prevents FK violations when clients send
-     * a conversationId that hasn't been created yet.
-     */
-    const existingConversation =
-      await prisma.conversation.findUnique({
-        where: { id: conversationId },
-      });
-
-    if (!existingConversation) {
-      await prisma.conversation.create({
-        data: {
-          id: conversationId,
+    if (
+      !content ||
+      !conversationId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Missing fields",
         },
-      });
+        {
+          status: 400,
+        }
+      );
     }
 
     /**
-     * Save database message.
+     * Ensure user belongs to conversation.
+     */
+    const participant =
+      await prisma.conversationParticipant.findFirst(
+        {
+          where: {
+            conversationId,
+
+            userId:
+              currentUser.id,
+          },
+        }
+      );
+
+    if (!participant) {
+      return NextResponse.json(
+        {
+          error:
+            "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    /**
+     * Create message.
      */
     const message =
       await prisma.message.create({
@@ -143,6 +211,22 @@ export async function POST(
         },
       });
 
+    /**
+     * Touch conversation timestamp.
+     */
+    await prisma.conversation.update(
+      {
+        where: {
+          id: conversationId,
+        },
+
+        data: {
+          updatedAt:
+            new Date(),
+        },
+      }
+    );
+
     return NextResponse.json(
       message
     );
@@ -152,7 +236,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Failed to create message",
+          "Failed to send message",
       },
       {
         status: 500,

@@ -4,7 +4,10 @@
  * Marketplace listing detail page.
  */
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import Link from "next/link";
 
@@ -14,6 +17,7 @@ import {
   Flag,
   Heart,
   MapPin,
+  MessageCircle,
   ShieldCheck,
 } from "lucide-react";
 
@@ -87,10 +91,18 @@ export default function ListingPage({
     useState(false);
 
   /**
-   * Save listing loading.
+   * Save loading.
    */
   const [saving, setSaving] =
     useState(false);
+
+  /**
+   * Messaging loading.
+   */
+  const [
+    messaging,
+    setMessaging,
+  ] = useState(false);
 
   /**
    * Fetch listing.
@@ -190,6 +202,63 @@ export default function ListingPage({
   }
 
   /**
+   * Message seller.
+   */
+  async function handleMessageSeller() {
+    if (!listing) {
+      return;
+    }
+
+    try {
+      setMessaging(true);
+
+      const response =
+        await fetch(
+          "/api/conversations",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              targetUserId:
+                listing.user.id,
+            }),
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (!response.ok) {
+        toast.error(
+          result.error ||
+            "Failed to open chat"
+        );
+
+        return;
+      }
+
+      toast.success(
+        "Conversation opened"
+      );
+
+      window.location.href = `/messages?conversationId=${result.id}`;
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to message seller"
+      );
+    } finally {
+      setMessaging(false);
+    }
+  }
+
+  /**
    * Loading UI.
    */
   if (loading) {
@@ -219,26 +288,9 @@ export default function ListingPage({
     <>
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-14 lg:grid-cols-2">
-          {/* ================================= */}
-          {/* IMAGE GALLERY */}
-          {/* ================================= */}
-
+          {/* Images */}
           <div>
-            {/* Main Image */}
-            <div
-              className="
-                relative
-                h-[520px]
-                overflow-hidden
-                rounded-[32px]
-                border
-                border-white/40
-                bg-white/70
-                shadow-xl
-                shadow-slate-200/30
-                backdrop-blur-xl
-              "
-            >
+            <div className="relative h-[520px] overflow-hidden rounded-[32px] border border-white/40 bg-white/70 shadow-xl backdrop-blur-xl">
               {activeImage ? (
                 <Image
                   src={activeImage}
@@ -247,20 +299,9 @@ export default function ListingPage({
                   className="object-cover"
                 />
               ) : (
-                <div
-                  className="
-                    flex
-                    h-full
-                    items-center
-                    justify-center
-                    bg-gradient-to-br
-                    from-blue-100
-                    via-indigo-100
-                    to-cyan-100
-                  "
-                >
-                  <p className="text-slate-500">
-                    No image available
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-slate-400">
+                    No image
                   </p>
                 </div>
               )}
@@ -268,8 +309,8 @@ export default function ListingPage({
 
             {/* Thumbnails */}
             {listing.imageUrls
-              ?.length > 1 && (
-              <div className="mt-5 grid grid-cols-4 gap-4">
+              .length > 1 && (
+              <div className="mt-5 flex gap-4 overflow-x-auto">
                 {listing.imageUrls.map(
                   (
                     image
@@ -281,28 +322,16 @@ export default function ListingPage({
                           image
                         )
                       }
-                      className={`
-                        relative
-                        h-28
-                        overflow-hidden
-                        rounded-2xl
-                        border-2
-                        transition
-                        ${
-                          activeImage ===
-                          image
-                            ? `
-                              border-blue-600
-                            `
-                            : `
-                              border-transparent
-                            `
-                        }
-                      `}
+                      className={`relative h-24 w-24 overflow-hidden rounded-2xl border-2 ${
+                        activeImage ===
+                        image
+                          ? "border-blue-600"
+                          : "border-transparent"
+                      }`}
                     >
                       <Image
                         src={image}
-                        alt="Listing image"
+                        alt="Preview"
                         fill
                         className="object-cover"
                       />
@@ -313,158 +342,146 @@ export default function ListingPage({
             )}
           </div>
 
-          {/* ================================= */}
-          {/* CONTENT */}
-          {/* ================================= */}
-
+          {/* Details */}
           <div>
-            {/* Category */}
-            <div
-              className="
-                inline-flex
-                rounded-full
-                bg-blue-100
-                px-4
-                py-2
-                text-sm
-                font-semibold
-                text-blue-700
-              "
-            >
+            <div className="inline-flex rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
               {listing.category}
             </div>
 
-            {/* Title */}
             <h1 className="mt-6 text-5xl font-black tracking-tight text-slate-900">
               {listing.title}
             </h1>
 
-            {/* Price */}
-            <div className="mt-8 text-4xl font-black text-blue-600">
-              LKR{" "}
-              {listing.price.toLocaleString()}
+            <div className="mt-8 flex items-center gap-3 text-slate-500">
+              <MapPin className="h-5 w-5" />
+
+              <span>
+                {listing.location}
+              </span>
             </div>
 
-            {/* Meta */}
-            <div className="mt-10 space-y-4">
-              <div className="flex items-center gap-3 text-slate-600">
-                <ShieldCheck className="h-5 w-5" />
+            <div className="mt-10">
+              <p className="text-6xl font-black text-slate-900">
+                $
+                {listing.price.toFixed(
+                  2
+                )}
+              </p>
 
-                <span>
-                  {
-                    listing.condition
-                  }
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 text-slate-600">
-                <MapPin className="h-5 w-5" />
-
-                <span>
-                  {
-                    listing.location
-                  }
-                </span>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold text-slate-900">
-                Description
-              </h2>
-
-              <p className="mt-5 leading-8 text-slate-600">
+              <p className="mt-3 text-lg text-slate-500">
                 {
-                  listing.description
+                  listing.condition
                 }
               </p>
+            </div>
+
+            <div className="mt-12 leading-8 text-slate-600">
+              {
+                listing.description
+              }
             </div>
 
             {/* Seller */}
-            <Link
-              href={`/users/${listing.user.id}`}
-              className="
-                mt-12
-                block
-                rounded-3xl
-                border
-                border-white/40
-                bg-white/70
-                p-6
-                backdrop-blur-xl
-                transition
-                hover:bg-white
-              "
-            >
-              <p className="text-sm text-slate-500">
-                Seller
-              </p>
+            <div className="mt-12 rounded-3xl border border-white/40 bg-white/70 p-6 backdrop-blur-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-xl font-bold text-white">
+                  {listing.user.name
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
 
-              <h3 className="mt-2 text-xl font-bold text-slate-900">
-                {
-                  listing.user.name
-                }
-              </h3>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {
+                      listing.user
+                        .name
+                    }
+                  </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
-                {
-                  listing.user.email
-                }
-              </p>
-            </Link>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Trusted CampusX seller
+                  </p>
+                </div>
+              </div>
 
-            {/* Actions */}
-            <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-              {/* Contact */}
-              <Link href="/messages">
-                <Button size="lg">
-                  Contact Seller
+              <div className="mt-6 flex flex-wrap gap-4">
+                <Button
+                  onClick={
+                    handleSave
+                  }
+                  disabled={saving}
+                  variant="secondary"
+                  className="flex items-center gap-3"
+                >
+                  <Heart className="h-5 w-5" />
+
+                  {saving
+                    ? "Saving..."
+                    : "Save Listing"}
                 </Button>
+
+                <Button
+                  onClick={
+                    handleMessageSeller
+                  }
+                  disabled={
+                    messaging
+                  }
+                  className="flex items-center gap-3"
+                >
+                  <MessageCircle className="h-5 w-5" />
+
+                  {messaging
+                    ? "Opening..."
+                    : "Message Seller"}
+                </Button>
+
+                <Button
+                  onClick={() =>
+                    setReportOpen(
+                      true
+                    )
+                  }
+                  variant="destructive"
+                  className="flex items-center gap-3"
+                >
+                  <Flag className="h-5 w-5" />
+
+                  Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Protection */}
+            <div className="mt-10 flex items-center gap-4 rounded-2xl bg-green-50 px-6 py-5 text-green-700">
+              <ShieldCheck className="h-6 w-6" />
+
+              <p className="font-medium">
+                Protected by CampusX
+                marketplace safety
+              </p>
+            </div>
+
+            {/* Back */}
+            <div className="mt-10">
+              <Link
+                href="/marketplace"
+                className="text-sm font-semibold text-blue-600"
+              >
+                ← Back to marketplace
               </Link>
-
-              {/* Save */}
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={
-                  handleSave
-                }
-                disabled={saving}
-              >
-                <Heart className="mr-2 h-5 w-5" />
-
-                {saving
-                  ? "Saving..."
-                  : "Save Listing"}
-              </Button>
-
-              {/* Report */}
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() =>
-                  setReportOpen(
-                    true
-                  )
-                }
-              >
-                <Flag className="mr-2 h-5 w-5" />
-
-                Report
-              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* REPORT MODAL */}
+      {/* Report modal */}
       <ReportModal
-        listingId={listing.id}
         open={reportOpen}
         onClose={() =>
           setReportOpen(false)
         }
+        listingId={listing.id}
       />
     </>
   );

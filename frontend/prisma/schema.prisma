@@ -1,7 +1,3 @@
-/**
- * Prisma database schema.
- */
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,340 +7,245 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * =====================================================
- */
-/**
- * USER MODEL
- */
-/**
- * =====================================================
- */
+/* ===================================================== */
+/* USER MODEL */
+/* ===================================================== */
 
 model User {
-  id String @id @default(cuid())
+  id            String   @id @default(cuid())
 
-  name String
+  name          String
 
-  email String @unique
+  email         String   @unique
 
-  password String
+  password      String
 
-  role UserRole @default(USER)
+  role          Role     @default(USER)
 
-  university String?
+  university    String?
 
-  bio String?
+  bio           String?
 
-  createdAt DateTime @default(now())
+  avatar        String?
 
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
 
-  /**
-   * User marketplace listings.
-   */
-  listings Listing[]
+  updatedAt     DateTime @updatedAt
 
-  /**
-   * User chat messages.
-   */
-  messages Message[]
+  listings      Listing[]
 
-  /**
-   * Saved marketplace listings.
-   */
+  messages      Message[]
+
   savedListings SavedListing[]
 
-  /**
-   * User notifications.
-   */
   notifications Notification[]
 
-  /**
-   * User submitted reports.
-   */
-  reports Report[] @relation("UserReports")
+  reports       Report[]
 
-  @@index([email])
+  conversations ConversationParticipant[]
+}
+
+/* ===================================================== */
+/* LISTINGS */
+/* ===================================================== */
+
+model Listing {
+  id          String   @id @default(cuid())
+
+  title       String
+
+  description String
+
+  category    String
+
+  price       Float
+
+  imageUrls   String[]
+
+  condition   String
+
+  location    String
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  savedBy     SavedListing[]
+
+  reports     Report[]
+
+  @@index([userId])
+
+  @@index([category])
+
   @@index([createdAt])
 }
 
-enum UserRole {
+/* ===================================================== */
+/* CONVERSATIONS */
+/* ===================================================== */
+
+model Conversation {
+  id          String   @id @default(cuid())
+
+  title       String?
+
+  isPrivate   Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime? @updatedAt
+
+  messages    Message[]
+
+  participants ConversationParticipant[]
+
+  @@index([createdAt])
+}
+
+/* ===================================================== */
+/* CONVERSATION PARTICIPANTS */
+/* ===================================================== */
+
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+
+  userId         String
+
+  conversationId String
+
+  createdAt      DateTime @default(now())
+
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+
+  @@index([userId])
+
+  @@index([conversationId])
+}
+
+/* ===================================================== */
+/* MESSAGES */
+/* ===================================================== */
+
+model Message {
+  id             String   @id @default(cuid())
+
+  content        String
+
+  createdAt      DateTime @default(now())
+
+  userId         String
+
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversationId String
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+
+  @@index([conversationId])
+
+  @@index([createdAt])
+}
+
+/* ===================================================== */
+/* SAVED LISTINGS */
+/* ===================================================== */
+
+model SavedListing {
+  id         String @id @default(cuid())
+
+  userId     String
+
+  listingId  String
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+
+  @@index([userId])
+
+  @@index([listingId])
+}
+
+/* ===================================================== */
+/* NOTIFICATIONS */
+/* ===================================================== */
+
+model Notification {
+  id         String   @id @default(cuid())
+
+  title      String
+
+  message    String
+
+  isRead     Boolean  @default(false)
+
+  link       String?
+
+  createdAt  DateTime @default(now())
+
+  userId     String
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+
+  @@index([createdAt])
+}
+
+/* ===================================================== */
+/* REPORTS */
+/* ===================================================== */
+
+model Report {
+  id          String   @id @default(cuid())
+
+  reason      String
+
+  description String?
+
+  status      ReportStatus @default(PENDING)
+
+  createdAt   DateTime @default(now())
+
+  reporterId  String
+
+  reporter    User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  listingId   String
+
+  listing     Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+
+  @@index([listingId])
+
+  @@index([createdAt])
+}
+
+/* ===================================================== */
+/* ENUMS */
+/* ===================================================== */
+
+enum Role {
   USER
   ADMIN
 }
 
-/**
- * =====================================================
- */
-/**
- * LISTING MODEL
- */
-/**
- * =====================================================
- */
-
-model Listing {
-  id String @id @default(cuid())
-
-  title String
-
-  description String
-
-  category String
-
-  /**
-   * Stored as float for sorting/filtering.
-   */
-  price Float
-
-  /**
-   * Uploaded cloud image URLs.
-   */
-  imageUrls String[]
-
-  /**
-   * Listing condition.
-   */
-  condition String
-
-  /**
-   * Campus location.
-   */
-  location String
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  /**
-   * Owner relation.
-   */
-  userId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  /**
-   * Saved users relation.
-   */
-  savedBy SavedListing[]
-
-  /**
-   * Listing reports.
-   */
-  reports Report[]
-
-  @@index([userId])
-  @@index([category])
-  @@index([createdAt])
-  @@index([price])
-}
-
-/**
- * =====================================================
- */
-/**
- * CONVERSATION MODEL
- */
-/**
- * =====================================================
- */
-
-model Conversation {
-  id String @id @default(cuid())
-
-  createdAt DateTime @default(now())
-
-  /**
-   * Conversation messages.
-   */
-  messages Message[]
-
-  @@index([createdAt])
-}
-
-/**
- * =====================================================
- */
-/**
- * MESSAGE MODEL
- */
-/**
- * =====================================================
- */
-
-model Message {
-  id String @id @default(cuid())
-
-  content String
-
-  createdAt DateTime @default(now())
-
-  /**
-   * Sender relation.
-   */
-  userId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  /**
-   * Conversation relation.
-   */
-  conversationId String
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([conversationId])
-  @@index([createdAt])
-}
-
-/**
- * =====================================================
- */
-/**
- * SAVED LISTINGS MODEL
- */
-/**
- * =====================================================
- */
-
-model SavedListing {
-  id String @id @default(cuid())
-
-  userId String
-
-  listingId String
-
-  /**
-   * User relation.
-   */
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  /**
-   * Listing relation.
-   */
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  /**
-   * Prevent duplicate saves.
-   */
-  @@unique([userId, listingId])
-  @@index([userId])
-  @@index([listingId])
-}
-
-/**
- * =====================================================
- */
-/**
- * NOTIFICATION MODEL
- */
-/**
- * =====================================================
- */
-
-model Notification {
-  id String @id @default(cuid())
-
-  /**
-   * Notification title.
-   */
-  title String
-
-  /**
-   * Notification message.
-   */
-  message String
-
-  /**
-   * Read state.
-   */
-  isRead Boolean @default(false)
-
-  /**
-   * Optional navigation link.
-   */
-  link String?
-
-  createdAt DateTime @default(now())
-
-  /**
-   * Notification owner.
-   */
-  userId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([createdAt])
-  @@index([isRead])
-}
-
-/**
- * =====================================================
- */
-/**
- * REPORT MODEL
- */
-/**
- * =====================================================
- */
-
-model Report {
-  id String @id @default(cuid())
-
-  /**
-   * Report reason.
-   */
-  reason String
-
-  /**
-   * Optional additional details.
-   */
-  description String?
-
-  /**
-   * Report status.
-   */
-  status String @default("PENDING")
-
-  createdAt DateTime @default(now())
-
-  /**
-   * ==============================
-   */
-  /**
-   * /**
-   * /* REPORTER RELATION
-   */
-  /**
-   * /**
-   * /* ==============================
-   */
-
-  reporterId String
-
-  reporter User @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
-
-  /**
-   * ==============================
-   */
-  /**
-   * /**
-   * /* LISTING RELATION
-   */
-  /**
-   * /**
-   * /* ==============================
-   */
-
-  listingId String
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([reporterId])
-  @@index([listingId])
-  @@index([status])
-  @@index([createdAt])
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REMOVED
 }

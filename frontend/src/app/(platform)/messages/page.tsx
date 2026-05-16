@@ -1,10 +1,17 @@
 "use client";
 
 /**
- * Modern messaging page.
+ * Private messaging system.
  */
 
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useSearchParams,
+} from "next/navigation";
 
 import useSWR from "swr";
 
@@ -37,13 +44,24 @@ export default function MessagesPage() {
     useCurrentUser();
 
   /**
+   * Search params.
+   */
+  const searchParams =
+    useSearchParams();
+
+  const conversationParam =
+    searchParams.get(
+      "conversationId"
+    );
+
+  /**
    * Active conversation.
    */
   const [
     activeConversation,
     setActiveConversation,
-  ] = useState(
-    "global-campus-chat"
+  ] = useState<string | null>(
+    null
   );
 
   /**
@@ -57,10 +75,49 @@ export default function MessagesPage() {
    */
   const {
     data: conversations = [],
+    mutate:
+      mutateConversations,
   } = useSWR(
     "/api/conversations",
-    fetcher
+    fetcher,
+    {
+      refreshInterval: 4000,
+    }
   );
+
+  /**
+   * Auto-select conversation.
+   */
+  useEffect(() => {
+    /**
+     * Open specific DM.
+     */
+    if (
+      conversationParam
+    ) {
+      setActiveConversation(
+        conversationParam
+      );
+
+      return;
+    }
+
+    /**
+     * Default first conversation.
+     */
+    if (
+      conversations.length > 0 &&
+      !activeConversation
+    ) {
+      setActiveConversation(
+        conversations[0].id
+      );
+    }
+  }, [
+    conversations,
+    activeConversation,
+    conversationParam,
+  ]);
 
   /**
    * Messages.
@@ -69,7 +126,9 @@ export default function MessagesPage() {
     data: messages = [],
     mutate,
   } = useSWR(
-    `/api/messages?conversationId=${activeConversation}`,
+    activeConversation
+      ? `/api/messages?conversationId=${activeConversation}`
+      : null,
     fetcher,
     {
       refreshInterval: 2000,
@@ -80,7 +139,10 @@ export default function MessagesPage() {
    * Send message.
    */
   async function handleSend() {
-    if (!content.trim()) {
+    if (
+      !content.trim() ||
+      !activeConversation
+    ) {
       return;
     }
 
@@ -98,6 +160,7 @@ export default function MessagesPage() {
 
             body: JSON.stringify({
               content,
+
               conversationId:
                 activeConversation,
             }),
@@ -119,6 +182,8 @@ export default function MessagesPage() {
       setContent("");
 
       mutate();
+
+      mutateConversations();
     } catch (error) {
       console.error(error);
 
@@ -128,21 +193,65 @@ export default function MessagesPage() {
     }
   }
 
+  /**
+   * Get conversation name.
+   */
+  function getConversationName(
+    conversation: any
+  ) {
+    const otherParticipant =
+      conversation?.participants?.find(
+        (participant: any) =>
+          participant.user.id !==
+          user?.id
+      );
+
+    return (
+      otherParticipant?.user
+        ?.name ||
+      "Unknown User"
+    );
+  }
+
+  /**
+   * Active conversation object.
+   */
+  const currentConversation =
+    conversations.find(
+      (conversation: any) =>
+        conversation.id ===
+        activeConversation
+    );
+
   return (
     <div className="flex h-[calc(100vh-140px)] overflow-hidden rounded-[32px] border border-white/40 bg-white/70 backdrop-blur-xl">
+      {/* ================================= */}
       {/* SIDEBAR */}
-      <div className="w-[320px] border-r border-slate-200 bg-white/50">
+      {/* ================================= */}
+
+      <div className="w-[340px] border-r border-slate-200 bg-white/50">
+        {/* Header */}
         <div className="border-b border-slate-200 px-6 py-6">
           <h1 className="text-3xl font-black text-slate-900">
             Messages
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Campus conversations
+            Private conversations
           </p>
         </div>
 
+        {/* Conversations */}
         <div className="space-y-2 p-4">
+          {conversations.length ===
+            0 && (
+            <div className="px-4 py-16 text-center">
+              <p className="text-sm text-slate-500">
+                No conversations yet
+              </p>
+            </div>
+          )}
+
           {conversations.map(
             (
               conversation: any
@@ -171,51 +280,66 @@ export default function MessagesPage() {
                   }
                 `}
               >
-                <h3 className="font-semibold">
-                  {
-                    conversation.title
-                  }
-                </h3>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">
+                      {getConversationName(
+                        conversation
+                      )}
+                    </h3>
 
-                <p
-                  className={`
-                    mt-1
-                    text-sm
-                    ${
-                      activeConversation ===
-                      conversation.id
-                        ? "text-blue-100"
-                        : "text-slate-500"
-                    }
-                  `}
-                >
-                  {
-                    conversation.description
-                  }
-                </p>
+                    <p
+                      className={`
+                        mt-1
+                        line-clamp-1
+                        text-sm
+                        ${
+                          activeConversation ===
+                          conversation.id
+                            ? "text-blue-100"
+                            : "text-slate-500"
+                        }
+                      `}
+                    >
+                      {conversation
+                        ?.messages?.[0]
+                        ?.content ||
+                        "Start chatting"}
+                    </p>
+                  </div>
+                </div>
               </button>
             )
           )}
         </div>
       </div>
 
-      {/* CHAT */}
+      {/* ================================= */}
+      {/* CHAT AREA */}
+      {/* ================================= */}
+
       <div className="flex flex-1 flex-col">
-        {/* HEADER */}
+        {/* Header */}
         <div className="border-b border-slate-200 px-8 py-6">
           <h2 className="text-2xl font-black text-slate-900">
-            {
-              conversations.find(
-                (c: any) =>
-                  c.id ===
-                  activeConversation
-              )?.title
-            }
+            {currentConversation
+              ? getConversationName(
+                  currentConversation
+                )
+              : "Messages"}
           </h2>
         </div>
 
-        {/* MESSAGES */}
+        {/* Messages */}
         <div className="flex-1 space-y-6 overflow-y-auto px-8 py-8">
+          {!activeConversation && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-slate-500">
+                Select a conversation
+              </p>
+            </div>
+          )}
+
           {messages.map(
             (message: any) => {
               const isCurrentUser =
@@ -233,7 +357,7 @@ export default function MessagesPage() {
                 >
                   <div
                     className={`
-                      max-w-[70%]
+                      max-w-[75%]
                       rounded-3xl
                       px-6
                       py-4
@@ -261,61 +385,62 @@ export default function MessagesPage() {
               );
             }
           )}
+        </div>
 
-          {messages.length ===
-            0 && (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-slate-500">
-                No messages yet
-              </p>
+        {/* Input */}
+        {activeConversation && (
+          <div className="border-t border-slate-200 p-6">
+            <div className="flex items-center gap-4">
+              <input
+                value={content}
+                onChange={(e) =>
+                  setContent(
+                    e.target.value
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (
+                    e.key ===
+                    "Enter"
+                  ) {
+                    handleSend();
+                  }
+                }}
+                placeholder="Type a message..."
+                className="
+                  h-14
+                  flex-1
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-5
+                  outline-none
+                "
+              />
+
+              <button
+                onClick={
+                  handleSend
+                }
+                className="
+                  flex
+                  h-14
+                  w-14
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-blue-600
+                  text-white
+                  transition
+                  hover:bg-blue-700
+                "
+              >
+                <Send className="h-5 w-5" />
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* INPUT */}
-        <div className="border-t border-slate-200 p-6">
-          <div className="flex items-center gap-4">
-            <input
-              value={content}
-              onChange={(e) =>
-                setContent(
-                  e.target.value
-                )
-              }
-              placeholder="Type a message..."
-              className="
-                h-14
-                flex-1
-                rounded-2xl
-                border
-                border-slate-200
-                bg-white
-                px-5
-                outline-none
-              "
-            />
-
-            <button
-              onClick={
-                handleSend
-              }
-              className="
-                flex
-                h-14
-                w-14
-                items-center
-                justify-center
-                rounded-2xl
-                bg-blue-600
-                text-white
-                transition
-                hover:bg-blue-700
-              "
-            >
-              <Send className="h-5 w-5" />
-            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
