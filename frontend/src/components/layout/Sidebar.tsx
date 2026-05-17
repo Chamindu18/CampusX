@@ -15,6 +15,7 @@ import {
   User,
   Settings,
   PlusSquare,
+  Home,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -33,6 +34,12 @@ const navigationItems = [
     title: "Marketplace",
     href: "/marketplace",
     icon: Store,
+  },
+
+  {
+    title: "Dorms",
+    href: "/dorms",
+    icon: Home,
   },
 
   {
