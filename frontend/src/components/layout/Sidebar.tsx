@@ -43,6 +43,12 @@ const navigationItems = [
   },
 
   {
+    title: "Create Dorm",
+    href: "/create-dorm",
+    icon: PlusSquare,
+  },
+
+  {
     title: "Create Listing",
     href: "/create-listing",
     icon: PlusSquare,
