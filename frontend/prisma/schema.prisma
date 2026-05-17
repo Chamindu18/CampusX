@@ -32,21 +32,44 @@ model User {
 
   updatedAt     DateTime @updatedAt
 
+  /**
+   * Marketplace listings.
+   */
   listings      Listing[]
 
+  /**
+   * Student dorm listings.
+   */
+  dorms         Dorm[]
+
+  /**
+   * Chat messages.
+   */
   messages      Message[]
 
+  /**
+   * Saved listings.
+   */
   savedListings SavedListing[]
 
+  /**
+   * Notifications.
+   */
   notifications Notification[]
 
+  /**
+   * Listing reports.
+   */
   reports       Report[]
 
+  /**
+   * Conversations.
+   */
   conversations ConversationParticipant[]
 }
 
 /* ===================================================== */
-/* LISTINGS */
+/* MARKETPLACE LISTINGS */
 /* ===================================================== */
 
 model Listing {
@@ -86,21 +109,116 @@ model Listing {
 }
 
 /* ===================================================== */
+/* DORM LISTINGS */
+/* ===================================================== */
+
+model Dorm {
+  /**
+   * Primary dorm ID.
+   */
+  id                     String   @id @default(cuid())
+
+  /**
+   * Dorm title.
+   */
+  title                  String
+
+  /**
+   * Full description.
+   */
+  description            String
+
+  /**
+   * Nearest university.
+   */
+  university             String
+
+  /**
+   * City.
+   */
+  city                   String
+
+  /**
+   * Boys / Girls / Mixed.
+   */
+  gender                 String
+
+  /**
+   * Private / Shared.
+   */
+  roomType               String
+
+  /**
+   * Monthly price.
+   */
+  price                  Float
+
+  /**
+   * Example:
+   * WiFi, Laundry, Kitchen
+   */
+  facilities             String[]
+
+  /**
+   * Uploaded images.
+   */
+  imageUrls              String[]
+
+  /**
+   * Contact phone number.
+   */
+  contactNumber          String
+
+  /**
+   * Example:
+   * "500m from NSBM"
+   */
+  distanceFromUniversity String
+
+  /**
+   * Owner relation.
+   */
+  userId                 String
+
+  user                   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /**
+   * Timestamps.
+   */
+  createdAt              DateTime @default(now())
+
+  updatedAt              DateTime @updatedAt
+
+  /**
+   * Indexes.
+   */
+  @@index([userId])
+
+  @@index([university])
+
+  @@index([city])
+
+  @@index([gender])
+
+  @@index([createdAt])
+}
+
+/* ===================================================== */
 /* CONVERSATIONS */
 /* ===================================================== */
 
 model Conversation {
-  id          String   @id @default(cuid())
+  id           String   @id @default(cuid())
 
-  title       String?
+  title        String?
 
-  isPrivate   Boolean  @default(true)
+  isPrivate    Boolean  @default(true)
 
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
-  updatedAt   DateTime? @updatedAt
+  updatedAt    DateTime? @updatedAt
 
-  messages    Message[]
+  messages     Message[]
 
   participants ConversationParticipant[]
 
